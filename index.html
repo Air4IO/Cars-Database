@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIR-4 - คลังผลงานการล้างคอยล์เย็นรถยนต์</title>
+    <title>AIR-4 - เธเธฅเธฑเธเธเธฅเธเธฒเธเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเธฃเธ–เธขเธเธ•เน</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -53,10 +53,10 @@
     <script type="text/babel">
         const DEFAULT_SHOP_CONFIG = {
             name: "AIR-4",
-            slogan: "ศูนย์บริการล้างคอยล์เย็นและดูแลระบบแอร์รถยนต์มาตรฐานสูง",
-            heroTitle: "คลังผลงานการล้างคอยล์เย็นรถยนต์",
-            heroSub: "ภาพเปรียบเทียบความสะอาด สภาพคอยล์เย็น ค่าแรงดันน้ำยา และคราบน้ำเสียจริงก่อน-หลังการบริการ",
-            footerText: "© 2026 AIR-4 Auto Air Conditioning Service Center. สงวนลิขสิทธิ์"
+            slogan: "เธจเธนเธเธขเนเธเธฃเธดเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเนเธฅเธฐเธ”เธนเนเธฅเธฃเธฐเธเธเนเธญเธฃเนเธฃเธ–เธขเธเธ•เนเธกเธฒเธ•เธฃเธเธฒเธเธชเธนเธ",
+            heroTitle: "เธเธฅเธฑเธเธเธฅเธเธฒเธเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเธฃเธ–เธขเธเธ•เน",
+            heroSub: "เธ เธฒเธเน€เธเธฃเธตเธขเธเน€เธ—เธตเธขเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ” เธชเธ เธฒเธเธเธญเธขเธฅเนเน€เธขเนเธ เธเนเธฒเนเธฃเธเธ”เธฑเธเธเนเธณเธขเธฒ เนเธฅเธฐเธเธฃเธฒเธเธเนเธณเน€เธชเธตเธขเธเธฃเธดเธเธเนเธญเธ-เธซเธฅเธฑเธเธเธฒเธฃเธเธฃเธดเธเธฒเธฃ",
+            footerText: "ยฉ 2026 AIR-4 Auto Air Conditioning Service Center. เธชเธเธงเธเธฅเธดเธเธชเธดเธ—เธเธดเน"
         };
 
         const INITIAL_CASES = [
@@ -69,10 +69,12 @@
                 pressureLow: "32",
                 pressureHigh: "185",
                 date: "2026-03-10",
-                beforeCoilImg: "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80",
-                afterCoilImg: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80",
-                gaugeImg: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
-                dirtyWaterImg: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80"
+                images: [
+                    { id: "img-101-1", name: "IMG001.jpg", url: "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80", type: "unknown" },
+                    { id: "img-101-2", name: "IMG002.jpg", url: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80", type: "unknown" },
+                    { id: "img-101-3", name: "IMG003.jpg", url: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80", type: "unknown" },
+                    { id: "img-101-4", name: "IMG004.jpg", url: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80", type: "unknown" }
+                ]
             },
             {
                 id: "case-102",
@@ -83,10 +85,11 @@
                 pressureLow: "30",
                 pressureHigh: "175",
                 date: "2026-03-12",
-                beforeCoilImg: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80",
-                afterCoilImg: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80",
-                gaugeImg: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80",
-                dirtyWaterImg: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80"
+                images: [
+                    { id: "img-102-1", name: "IMG001.jpg", url: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80", type: "unknown" },
+                    { id: "img-102-2", name: "IMG002.jpg", url: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80", type: "unknown" },
+                    { id: "img-102-3", name: "IMG003.jpg", url: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80", type: "unknown" }
+                ]
             },
             {
                 id: "case-103",
@@ -97,12 +100,19 @@
                 pressureLow: "35",
                 pressureHigh: "210",
                 date: "2026-03-14",
-                beforeCoilImg: "https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=800&q=80",
-                afterCoilImg: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80",
-                gaugeImg: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
-                dirtyWaterImg: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80"
+                images: [
+                    { id: "img-103-1", name: "IMG001.jpg", url: "https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=800&q=80", type: "unknown" },
+                    { id: "img-103-2", name: "IMG002.jpg", url: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=800&q=80", type: "unknown" }
+                ]
             }
         ];
+
+        // Helper functions for image array normalization
+        const getCaseImages = (item) => item?.images || item?.Images || [];
+        const getCaseBrand = (item) => item?.brand || item?.Brand || '';
+        const getCaseModel = (item) => item?.model || item?.Model || '';
+        const getCaseYear = (item) => item?.year || item?.Year || '';
+        const getCaseId = (item) => item?.id || item?.CaseID || '';
 
         const Air4Logo = ({ className = "h-9", variant = "white", alt = "AIR-4 Logo" }) => {
             const logoSrc = variant === "blue" ? "Logo Blue.png" : "Logo White.png";
@@ -135,10 +145,9 @@
         function App() {
             // Local state management
             const [user, setUser] = React.useState(null); // { role: 'admin' | 'customer', name: string }
-            const [cases, setCases] = React.useState(() => {
-                const saved = localStorage.getItem('air4_cases');
-                return saved ? JSON.parse(saved) : INITIAL_CASES;
-            });
+            const [cases, setCases] = React.useState([]);
+            const [loading, setLoading] = React.useState(true);
+            const [error, setError] = React.useState(null);
             const [shopConfig, setShopConfig] = React.useState(() => {
                 const saved = localStorage.getItem('air4_shop_config');
                 return saved ? JSON.parse(saved) : DEFAULT_SHOP_CONFIG;
@@ -157,10 +166,35 @@
             const [showShopConfigModal, setShowShopConfigModal] = React.useState(false);
             const [toastMessage, setToastMessage] = React.useState('');
 
-            // Save cases to localStorage when updated
+            // Fetch cases from FastAPI backend on mount
             React.useEffect(() => {
-                localStorage.setItem('air4_cases', JSON.stringify(cases));
-            }, [cases]);
+                const fetchCases = async () => {
+                    setLoading(true);
+                    setError(null);
+                    try {
+                        const response = await fetch('http://127.0.0.1:8000/cases', {
+                            method: 'GET',
+                            mode: 'cors', // Explicitly requesting CORS
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`Server responded with ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        setCases(Array.isArray(data) ? data : INITIAL_CASES);
+                    } catch (err) {
+                        console.warn("Backend unavailable, using default data:", err);
+                        setError("Could not connect to backend. Using local sample data.");
+                        setCases(INITIAL_CASES);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                fetchCases();
+            }, []);
 
             // Save shop config to localStorage when updated
             React.useEffect(() => {
@@ -174,24 +208,28 @@
             };
 
             // Unique lists for dropdown filters
-            const brands = React.useMemo(() => [...new Set(cases.map(c => c.brand))].sort(), [cases]);
+            const brands = React.useMemo(() => [...new Set(cases.map(c => getCaseBrand(c)))].filter(Boolean).sort(), [cases]);
             const models = React.useMemo(() => {
-                const filtered = selectedBrand ? cases.filter(c => c.brand === selectedBrand) : cases;
-                return [...new Set(filtered.map(c => c.model))].sort();
+                const filtered = selectedBrand ? cases.filter(c => getCaseBrand(c) === selectedBrand) : cases;
+                return [...new Set(filtered.map(c => getCaseModel(c)))].filter(Boolean).sort();
             }, [cases, selectedBrand]);
-            const years = React.useMemo(() => [...new Set(cases.map(c => c.year))].sort((a,b) => b-a), [cases]);
+            const years = React.useMemo(() => [...new Set(cases.map(c => getCaseYear(c)))].filter(Boolean).sort((a,b) => b-a), [cases]);
 
             // Filtered cases list
             const filteredCases = React.useMemo(() => {
                 return cases.filter(item => {
+                    const brand = getCaseBrand(item);
+                    const model = getCaseModel(item);
+                    const year = getCaseYear(item);
+
                     const matchesSearch = 
-                        item.brand.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-                        item.model.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-                        item.year.toString().includes(searchKeyword);
+                        brand.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                        model.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                        year.toString().includes(searchKeyword);
                     
-                    const matchesBrand = !selectedBrand || item.brand === selectedBrand;
-                    const matchesModel = !selectedModel || item.model === selectedModel;
-                    const matchesYear = !selectedYear || item.year.toString() === selectedYear.toString();
+                    const matchesBrand = !selectedBrand || brand === selectedBrand;
+                    const matchesModel = !selectedModel || model === selectedModel;
+                    const matchesYear = !selectedYear || year.toString() === selectedYear.toString();
 
                     return matchesSearch && matchesBrand && matchesModel && matchesYear;
                 });
@@ -207,9 +245,9 @@
 
             // Delete case handler
             const handleDeleteCase = (id) => {
-                if(window.confirm('คุณต้องการลบเคสนี้ใช่หรือไม่?')) {
+                if(window.confirm('เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธฅเธเน€เธเธชเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน?')) {
                     setCases(prev => prev.filter(c => c.id !== id));
-                    showToast('ลบข้อมูลเคสเรียบร้อยแล้ว');
+                    showToast('เธฅเธเธเนเธญเธกเธนเธฅเน€เธเธชเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง');
                 }
             };
 
@@ -219,7 +257,7 @@
                     <LoginPage 
                         onLogin={(userData) => {
                             setUser(userData);
-                            showToast(`เข้าสู่ระบบในฐานะ ${userData.role === 'admin' ? 'Admin' : 'ผู้เยี่ยมชม'} เรียบร้อย`);
+                            showToast(`เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเนเธเธเธฒเธเธฐ ${userData.role === 'admin' ? 'Admin' : 'เธเธนเนเน€เธขเธตเนเธขเธกเธเธก'} เน€เธฃเธตเธขเธเธฃเนเธญเธข`);
                         }} 
                     />
                 );
@@ -247,29 +285,29 @@
                                                 class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium px-3 py-2 rounded-lg flex items-center shadow-md transition"
                                             >
                                                 <i class="fa-solid font-bold fa-plus mr-1.5"></i>
-                                                เพิ่มเคสใหม่
+                                                เน€เธเธดเนเธกเน€เธเธชเนเธซเธกเน
                                             </button>
                                             <button 
                                                 onClick={() => setShowShopConfigModal(true)}
                                                 class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs sm:text-sm font-medium px-3 py-2 rounded-lg flex items-center border border-slate-700 transition"
-                                                title="แก้ไขข้อความร้านค้า"
+                                                title="เนเธเนเนเธเธเนเธญเธเธงเธฒเธกเธฃเนเธฒเธเธเนเธฒ"
                                             >
                                                 <i class="fa-solid fa-gear mr-1.5"></i>
-                                                <span class="hidden md:inline">ตั้งค่าร้าน</span>
+                                                <span class="hidden md:inline">เธ•เธฑเนเธเธเนเธฒเธฃเนเธฒเธ</span>
                                             </button>
                                         </>
                                     )}
 
                                     <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
                                         <span class={`inline-block w-2.5 h-2.5 rounded-full ${user.role === 'admin' ? 'bg-amber-400' : 'bg-green-400'}`}></span>
-                                        <span class="text-xs sm:text-sm font-medium">{user.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'ลูกค้า / ผู้เยี่ยมชม'}</span>
+                                        <span class="text-xs sm:text-sm font-medium">{user.role === 'admin' ? 'เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ (Admin)' : 'เธฅเธนเธเธเนเธฒ / เธเธนเนเน€เธขเธตเนเธขเธกเธเธก'}</span>
                                         <button 
-                                            onClick={() => { setUser(null); showToast('ออกจากระบบเรียบร้อย'); }} 
+                                            onClick={() => { setUser(null); showToast('เธญเธญเธเธเธฒเธเธฃเธฐเธเธเน€เธฃเธตเธขเธเธฃเนเธญเธข'); }} 
                                             class="text-slate-400 hover:text-red-400 text-xs ml-2 pl-2 border-l border-slate-700 flex items-center"
-                                            title="ออกจากระบบ"
+                                            title="เธญเธญเธเธเธฒเธเธฃเธฐเธเธ"
                                         >
                                             <i class="fa-solid fa-right-from-bracket mr-1"></i>
-                                            <span class="hidden sm:inline">ออกจากระบบ</span>
+                                            <span class="hidden sm:inline">เธญเธญเธเธเธฒเธเธฃเธฐเธเธ</span>
                                         </button>
                                     </div>
                                 </div>
@@ -282,7 +320,7 @@
                                 <div class="mb-6 md:mb-0 max-w-2xl text-center md:text-left">
                                     <div class="inline-flex items-center space-x-2 bg-blue-900/60 text-blue-300 text-xs font-semibold px-3 py-1 rounded-full border border-blue-700/50 mb-3">
                                         <i class="fa-solid fa-circle-check text-blue-400"></i>
-                                        <span>มาตรฐานตรวจเช็คระบบแอร์ AIR-4</span>
+                                        <span>เธกเธฒเธ•เธฃเธเธฒเธเธ•เธฃเธงเธเน€เธเนเธเธฃเธฐเธเธเนเธญเธฃเน AIR-4</span>
                                     </div>
                                     <h1 class="text-2xl sm:text-4xl font-bold tracking-tight mb-2 text-white">{shopConfig.heroTitle}</h1>
                                     <p class="text-slate-300 text-sm sm:text-base">{shopConfig.heroSub}</p>
@@ -290,11 +328,11 @@
                                 <div class="flex items-center space-x-4 bg-slate-800/80 p-4 rounded-xl border border-slate-700 backdrop-blur">
                                     <div class="text-center px-4 border-r border-slate-700">
                                         <div class="text-2xl sm:text-3xl font-extrabold text-blue-400">{cases.length}</div>
-                                        <div class="text-xs text-slate-400">เคสตัวอย่างในคลัง</div>
+                                        <div class="text-xs text-slate-400">เน€เธเธชเธ•เธฑเธงเธญเธขเนเธฒเธเนเธเธเธฅเธฑเธ</div>
                                     </div>
                                     <div class="text-center px-4">
                                         <div class="text-2xl sm:text-3xl font-extrabold text-green-400">100%</div>
-                                        <div class="text-xs text-slate-400">สะอาด ปลอดเชื้อ</div>
+                                        <div class="text-xs text-slate-400">เธชเธฐเธญเธฒเธ” เธเธฅเธญเธ”เน€เธเธทเนเธญ</div>
                                     </div>
                                 </div>
                             </div>
@@ -307,15 +345,15 @@
                                 <div class="flex flex-col md:flex-row items-center justify-between mb-4 pb-4 border-b border-slate-100 gap-2">
                                     <div class="flex items-center space-x-2 w-full md:w-auto">
                                         <i class="fa-solid fa-filter text-blue-600"></i>
-                                        <h2 class="text-base font-semibold text-slate-800">ค้นหาและกรองรุ่นรถ</h2>
-                                        <span class="text-xs text-slate-500 font-normal">({filteredCases.length} รายการ)</span>
+                                        <h2 class="text-base font-semibold text-slate-800">เธเนเธเธซเธฒเนเธฅเธฐเธเธฃเธญเธเธฃเธธเนเธเธฃเธ–</h2>
+                                        <span class="text-xs text-slate-500 font-normal">({filteredCases.length} เธฃเธฒเธขเธเธฒเธฃ)</span>
                                     </div>
                                     {(searchKeyword || selectedBrand || selectedModel || selectedYear) && (
                                         <button 
                                             onClick={handleResetFilters}
                                             class="text-xs text-red-600 hover:text-red-800 font-medium flex items-center self-end md:self-auto"
                                         >
-                                            <i class="fa-solid fa-rotate-left mr-1"></i> ล้างตัวกรองทั้งหมด
+                                            <i class="fa-solid fa-rotate-left mr-1"></i> เธฅเนเธฒเธเธ•เธฑเธงเธเธฃเธญเธเธ—เธฑเนเธเธซเธกเธ”
                                         </button>
                                     )}
                                 </div>
@@ -323,13 +361,13 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     {/* Keyword Search */}
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">ค้นหาคำขวัญ / ยี่ห้อ / รุ่น</label>                                        <div class="relative">
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">เธเนเธเธซเธฒเธเธณเธเธงเธฑเธ / เธขเธตเนเธซเนเธญ / เธฃเธธเนเธ</label>                                        <div class="relative">
                                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                                             <input 
                                                 type="text"
                                                 value={searchKeyword}
                                                 onChange={(e) => setSearchKeyword(e.target.value)}
-                                                placeholder="เช่น Toyota, Civic, 2022..."
+                                                placeholder="เน€เธเนเธ Toyota, Civic, 2022..."
                                                 class="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                             />
                                         </div>
@@ -337,13 +375,13 @@
 
                                     {/* Brand Select */}
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">ยี่ห้อรถ (Brand)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">เธขเธตเนเธซเนเธญเธฃเธ– (Brand)</label>
                                         <select 
                                             value={selectedBrand}
                                             onChange={(e) => { setSelectedBrand(e.target.value); setSelectedModel(''); }}
                                             class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                         >
-                                            <option value="">-- ทั้งหมดทุกยี่ห้อ --</option>
+                                            <option value="">-- เธ—เธฑเนเธเธซเธกเธ”เธ—เธธเธเธขเธตเนเธซเนเธญ --</option>
                                             {brands.map(b => (
                                                 <option key={b} value={b}>{b}</option>
                                             ))}
@@ -352,13 +390,13 @@
 
                                     {/* Model Select */}
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">รุ่นรถ (Model)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">เธฃเธธเนเธเธฃเธ– (Model)</label>
                                         <select 
                                             value={selectedModel}
                                             onChange={(e) => setSelectedModel(e.target.value)}
                                             class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                         >
-                                            <option value="">-- ทั้งหมดทุกรุ่น --</option>
+                                            <option value="">-- เธ—เธฑเนเธเธซเธกเธ”เธ—เธธเธเธฃเธธเนเธ --</option>
                                             {models.map(m => (
                                                 <option key={m} value={m}>{m}</option>
                                             ))}
@@ -367,13 +405,13 @@
 
                                     {/* Year Select */}
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">ปีรถ (Year)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">เธเธตเธฃเธ– (Year)</label>
                                         <select 
                                             value={selectedYear}
                                             onChange={(e) => setSelectedYear(e.target.value)}
                                             class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                         >
-                                            <option value="">-- ทั้งหมดทุกปี --</option>
+                                            <option value="">-- เธ—เธฑเนเธเธซเธกเธ”เธ—เธธเธเธเธต --</option>
                                             {years.map(y => (
                                                 <option key={y} value={y}>{y}</option>
                                             ))}
@@ -383,125 +421,135 @@
                             </div>
 
                             {/* CASES GALLERY GRID */}
-                            {}
-                            {filteredCases.length === 0 ? (
+                            {loading ? (
+                                <div class="text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mb-3"></div>
+                                    <div class="text-slate-600 font-medium text-sm">Loading cases...</div>
+                                </div>
+                            ) : filteredCases.length === 0 ? (
                                 <div class="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300">
                                     <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 text-2xl mb-3">
                                         <i class="fa-solid fa-car-tunnel"></i>
                                     </div>
-                                    <h3 class="text-slate-700 font-semibold mb-1">ไม่พบข้อมูลเคสการล้างคอยล์เย็นที่ตรงกัน</h3>
-                                    <p class="text-slate-500 text-sm mb-4">ลองปรับเปลี่ยนตัวกรอง หรือค้นหาด้วยคำอื่น</p>
+                                    <h3 class="text-slate-700 font-semibold mb-1">เนเธกเนเธเธเธเนเธญเธกเธนเธฅเน€เธเธชเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเธ—เธตเนเธ•เธฃเธเธเธฑเธ</h3>
+                                    <p class="text-slate-500 text-sm mb-4">เธฅเธญเธเธเธฃเธฑเธเน€เธเธฅเธตเนเธขเธเธ•เธฑเธงเธเธฃเธญเธ เธซเธฃเธทเธญเธเนเธเธซเธฒเธ”เนเธงเธขเธเธณเธญเธทเนเธ</p>
                                     <button 
                                         onClick={handleResetFilters}
                                         class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-lg font-medium"
                                     >
-                                        ล้างตัวกรองทั้งหมด
+                                        เธฅเนเธฒเธเธ•เธฑเธงเธเธฃเธญเธเธ—เธฑเนเธเธซเธกเธ”
                                     </button>
                                 </div>
                             ) : (
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {filteredCases.map(item => (
-                                        <div 
-                                            key={item.id} 
-                                            class="bg-white rounded-2xl shadow-sm hover:shadow-md border border-slate-200 overflow-hidden flex flex-col transition duration-200"
-                                        >
-                                            {/* Card Header: Car Brand & Model */}
-                                            <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
-                                                <div>
-                                                    <div class="text-xs text-blue-400 font-semibold uppercase tracking-wider">{item.brand}</div>
-                                                    <div class="text-lg font-bold leading-tight">{item.model} <span class="text-sm font-normal text-slate-400">({item.year})</span></div>
-                                                </div>
-                                                <div class="bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700">
-                                                    <i class="fa-solid fa-gauge-high mr-1 text-slate-400"></i>
-                                                    {item.mileage ? `${item.mileage} กม.` : 'ไม่ระบุ'}
-                                                </div>
-                                            </div>
+                                    {filteredCases.map(item => {
+                                        const caseId = getCaseId(item);
+                                        const brand = getCaseBrand(item);
+                                        const model = getCaseModel(item);
+                                        const year = getCaseYear(item);
+                                        const images = getCaseImages(item);
+                                        const displayImages = images.slice(0, 4);
 
-                                            {/* Before / After Coil Preview */}
-                                            <div class="relative bg-slate-100 h-48 border-b border-slate-200 group cursor-pointer" onClick={() => setShowCaseModal(item)}>
-                                                <div class="grid grid-cols-2 h-full">
-                                                    {/* Before Image */}
-                                                    <div class="relative border-r border-white/50 overflow-hidden">
-                                                        <img 
-                                                            src={item.beforeCoilImg} 
-                                                            alt="ก่อนล้าง"
-                                                            class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                                            onError={(e) => { e.target.src = 'https://placehold.co/400x300/333333/ffffff?text=Before+Wash'; }}
-                                                        />
-                                                        <span class="absolute top-2 left-2 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
-                                                            ก่อนล้าง
+                                        return (
+                                            <div 
+                                                key={caseId} 
+                                                class="bg-white rounded-2xl shadow-sm hover:shadow-md border border-slate-200 overflow-hidden flex flex-col transition duration-200"
+                                            >
+                                                {/* Card Header: Car Brand & Model */}
+                                                <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+                                                    <div>
+                                                        <div class="text-xs text-blue-400 font-semibold uppercase tracking-wider">{brand}</div>
+                                                        <div class="text-lg font-bold leading-tight">{model} <span class="text-sm font-normal text-slate-400">({year})</span></div>
+                                                    </div>
+                                                    <div class="bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700">
+                                                        <i class="fa-solid fa-gauge-high mr-1 text-slate-400"></i>
+                                                        {item.mileage ? `${item.mileage} เธเธก.` : 'เนเธกเนเธฃเธฐเธเธธ'}
+                                                    </div>
+                                                </div>
+
+                                                {/* Images Preview Grid (Up to 4 images) */}
+                                                <div class="relative bg-slate-100 h-48 border-b border-slate-200 group cursor-pointer" onClick={() => setShowCaseModal(item)}>
+                                                    {displayImages.length === 0 ? (
+                                                        <div class="h-full flex flex-col items-center justify-center text-slate-400">
+                                                            <i class="fa-regular fa-image text-3xl mb-1"></i>
+                                                            <span class="text-xs font-medium">No Image</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div class={`grid h-full w-full ${
+                                                            displayImages.length === 1 ? 'grid-cols-1' : 
+                                                            displayImages.length === 2 ? 'grid-cols-2' : 
+                                                            displayImages.length === 3 ? 'grid-cols-3' : 'grid-cols-2 grid-rows-2'
+                                                        }`}>
+                                                            {displayImages.map((img, idx) => (
+                                                                <div key={img.id || idx} class="relative overflow-hidden border-r border-b border-slate-200/50">
+                                                                    <img 
+                                                                        src={img.url} 
+                                                                        alt={img.name || `Image ${idx + 1}`}
+                                                                        class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                                                        onError={(e) => { e.target.src = 'https://placehold.co/400x300/e2e8f0/64748b?text=Image'; }}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    <div class="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition flex items-center justify-center">
+                                                        <span class="bg-white/90 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg backdrop-blur flex items-center group-hover:scale-110 transition">
+                                                            <i class="fa-solid fa-expand mr-1.5 text-blue-600"></i> เธเธฅเธดเธเน€เธเธทเนเธญเธ”เธนเธฃเธนเธเธเธขเธฒเธข ({images.length})
                                                         </span>
                                                     </div>
-                                                    {/* After Image */}
-                                                    <div class="relative overflow-hidden">
-                                                        <img 
-                                                            src={item.afterCoilImg} 
-                                                            alt="หลังล้าง"
-                                                            class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                                            onError={(e) => { e.target.src = 'https://placehold.co/400x300/00aa44/ffffff?text=After+Clean'; }}
-                                                        />
-                                                        <span class="absolute top-2 right-2 bg-green-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow">
-                                                            หลังล้าง
+                                                </div>
+
+                                                {/* Card Details Body */}
+                                                <div class="p-4 flex-1 flex flex-col justify-between bg-slate-50/50">
+                                                    <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+                                                        <div class="bg-white p-2 rounded-lg border border-slate-200">
+                                                            <span class="text-slate-500 block text-[10px]">เนเธฃเธเธ”เธฑเธ Low Side</span>
+                                                            <span class="font-bold text-slate-800 text-sm">{item.pressureLow ? `${item.pressureLow} PSI` : 'เนเธกเนเนเธ”เนเธฃเธฐเธเธธ'}</span>
+                                                        </div>
+                                                        <div class="bg-white p-2 rounded-lg border border-slate-200">
+                                                            <span class="text-slate-500 block text-[10px]">เนเธฃเธเธ”เธฑเธ High Side</span>
+                                                            <span class="font-bold text-slate-800 text-sm">{item.pressureHigh ? `${item.pressureHigh} PSI` : 'เนเธกเนเนเธ”เนเธฃเธฐเธเธธ'}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Admin Actions or View Action */}
+                                                    <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+                                                        <span class="text-[11px] text-slate-400">
+                                                            <i class="fa-regular fa-calendar mr-1"></i> {item.date || 'เธฅเนเธฒเธชเธธเธ”'}
                                                         </span>
-                                                    </div>
-                                                </div>
 
-                                                <div class="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition flex items-center justify-center">
-                                                    <span class="bg-white/90 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg backdrop-blur flex items-center group-hover:scale-110 transition">
-                                                        <i class="fa-solid fa-expand mr-1.5 text-blue-600"></i> คลิกเพื่อดูรูปขยาย
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* Card Details Body */}
-                                            <div class="p-4 flex-1 flex flex-col justify-between bg-slate-50/50">
-                                                <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-                                                    <div class="bg-white p-2 rounded-lg border border-slate-200">
-                                                        <span class="text-slate-500 block text-[10px]">แรงดัน Low Side</span>
-                                                        <span class="font-bold text-slate-800 text-sm">{item.pressureLow ? `${item.pressureLow} PSI` : 'ไม่ได้ระบุ'}</span>
-                                                    </div>
-                                                    <div class="bg-white p-2 rounded-lg border border-slate-200">
-                                                        <span class="text-slate-500 block text-[10px]">แรงดัน High Side</span>
-                                                        <span class="font-bold text-slate-800 text-sm">{item.pressureHigh ? `${item.pressureHigh} PSI` : 'ไม่ได้ระบุ'}</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Admin Actions or View Action */}
-                                                <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
-                                                    <span class="text-[11px] text-slate-400">
-                                                        <i class="fa-regular fa-calendar mr-1"></i> {item.date || 'ล่าสุด'}
-                                                    </span>
-
-                                                    <div class="flex items-center space-x-2">
-                                                        {user?.role === 'admin' && (
-                                                            <>
-                                                                <button 
-                                                                    onClick={() => setShowAddEditModal(item)}
-                                                                    class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition"
-                                                                    title="แก้ไขเคสนี้"
-                                                                >
-                                                                    <i class="fa-solid fa-pen-to-square"></i>
-                                                                </button>
-                                                                <button 
-                                                                    onClick={() => handleDeleteCase(item.id)}
-                                                                    class="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition"
-                                                                    title="ลบเคสนี้"
-                                                                >
-                                                                    <i class="fa-solid fa-trash-can"></i>
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                        <button 
-                                                            onClick={() => setShowCaseModal(item)}
-                                                            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium text-xs px-3 py-1.5 rounded-lg transition"
-                                                        >
-                                                            รายละเอียดรูป <i class="fa-solid fa-chevron-right ml-1 text-[10px]"></i>
-                                                        </button>
+                                                        <div class="flex items-center space-x-2">
+                                                            {user?.role === 'admin' && (
+                                                                <>
+                                                                    <button 
+                                                                        onClick={() => setShowAddEditModal(item)}
+                                                                        class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition"
+                                                                        title="เนเธเนเนเธเน€เธเธชเธเธตเน"
+                                                                    >
+                                                                        <i class="fa-solid fa-pen-to-square"></i>
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleDeleteCase(caseId)}
+                                                                        class="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition"
+                                                                        title="เธฅเธเน€เธเธชเธเธตเน"
+                                                                    >
+                                                                        <i class="fa-solid fa-trash-can"></i>
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                            <button 
+                                                                onClick={() => setShowCaseModal(item)}
+                                                                class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium text-xs px-3 py-1.5 rounded-lg transition"
+                                                            >
+                                                                เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธฃเธนเธ <i class="fa-solid fa-chevron-right ml-1 text-[10px]"></i>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </main>
@@ -542,7 +590,7 @@
                                     return [savedCase, ...prev];
                                 });
                                 setShowAddEditModal(false);
-                                showToast(savedCase.id ? 'บันทึกข้อมูลเคสเรียบร้อย' : 'เพิ่มเคสใหม่เรียบร้อย');
+                                showToast(savedCase.id ? 'เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเน€เธเธชเน€เธฃเธตเธขเธเธฃเนเธญเธข' : 'เน€เธเธดเนเธกเน€เธเธชเนเธซเธกเนเน€เธฃเธตเธขเธเธฃเนเธญเธข');
                             }}
                         />
                     )}
@@ -555,7 +603,7 @@
                             onSave={(newConfig) => {
                                 setShopConfig(newConfig);
                                 setShowShopConfigModal(false);
-                                showToast('ปรับเปลี่ยนข้อความร้านค้าเรียบร้อยแล้ว');
+                                showToast('เธเธฃเธฑเธเน€เธเธฅเธตเนเธขเธเธเนเธญเธเธงเธฒเธกเธฃเนเธฒเธเธเนเธฒเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง');
                             }}
                         />
                     )}
@@ -597,46 +645,46 @@
                             <div class="inline-block p-4 bg-slate-800/80 rounded-2xl border border-slate-700/50 mb-4 shadow-inner">
                                 <Air4Logo className="h-12 sm:h-14 mx-auto" variant="white" />
                             </div>
-                            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wide">เข้าสู่ระบบดูผลงาน</h1>
-                            <p class="text-xs sm:text-sm text-slate-400 mt-1.5">คลังผลงานการล้างคอยล์เย็นและดูแลระบบแอร์รถยนต์ AIR-4</p>
+                            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wide">เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเธ”เธนเธเธฅเธเธฒเธ</h1>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-1.5">เธเธฅเธฑเธเธเธฅเธเธฒเธเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเนเธฅเธฐเธ”เธนเนเธฅเธฃเธฐเธเธเนเธญเธฃเนเธฃเธ–เธขเธเธ•เน AIR-4</p>
                         </div>
 
                         {/* Quick Selection Buttons */}
                         <div class="space-y-3 mb-6">
                             <button 
-                                onClick={() => onLogin({ role: 'customer', name: 'ลูกค้า / ผู้เยี่ยมชม' })}
+                                onClick={() => onLogin({ role: 'customer', name: 'เธฅเธนเธเธเนเธฒ / เธเธนเนเน€เธขเธตเนเธขเธกเธเธก' })}
                                 class="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold rounded-xl text-sm shadow-lg shadow-blue-900/40 transition transform active:scale-98 flex items-center justify-center space-x-2.5 border border-blue-400/30"
                             >
                                 <i class="fa-solid fa-eye text-blue-200"></i>
-                                <span>เข้าสู่ระบบเป็น "ลูกค้า / ผู้เยี่ยมชม"</span>
+                                <span>เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเน€เธเนเธ "เธฅเธนเธเธเนเธฒ / เธเธนเนเน€เธขเธตเนเธขเธกเธเธก"</span>
                             </button>
 
                             <button 
-                                onClick={() => onLogin({ role: 'admin', name: 'ผู้ดูแลระบบ Admin' })}
+                                onClick={() => onLogin({ role: 'admin', name: 'เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ Admin' })}
                                 class="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-xl text-xs sm:text-sm transition flex items-center justify-center space-x-2 border border-slate-700 hover:border-slate-600"
                             >
                                 <i class="fa-solid fa-user-shield text-amber-400"></i>
-                                <span>เข้าสู่ระบบเป็น "ผู้ดูแลระบบ (Admin)"</span>
+                                <span>เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเน€เธเนเธ "เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ (Admin)"</span>
                             </button>
                         </div>
 
                         {/* Divider */}
                         <div class="relative my-6 text-center">
                             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
-                            <span class="relative bg-slate-900 px-3 text-[11px] text-slate-500">หรือ ใส่ชื่อผู้ใช้เพื่อเข้าสู่ระบบ</span>
+                            <span class="relative bg-slate-900 px-3 text-[11px] text-slate-500">เธซเธฃเธทเธญ เนเธชเนเธเธทเนเธญเธเธนเนเนเธเนเน€เธเธทเนเธญเน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธ</span>
                         </div>
 
                         {/* Custom Username Input */}
                         <form onSubmit={handleCustomLogin} class="space-y-3 text-left">
                             <div>
-                                <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">เธเธทเนเธญเธเธนเนเนเธเนเธเธฒเธ (Username)</label>
                                 <div class="relative">
                                     <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
                                     <input 
                                         type="text" 
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        placeholder="เช่น admin หรือ customer"
+                                        placeholder="เน€เธเนเธ admin เธซเธฃเธทเธญ customer"
                                         class="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
@@ -647,12 +695,12 @@
                                 disabled={!username.trim()}
                                 class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-medium text-xs rounded-xl transition border border-slate-700"
                             >
-                                เข้าสู่ระบบ
+                                เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธ
                             </button>
                         </form>
 
                         <div class="mt-8 text-center text-[11px] text-slate-500">
-                            © 2026 AIR-4 Auto Air Conditioning Service Center
+                            ยฉ 2026 AIR-4 Auto Air Conditioning Service Center
                         </div>
                     </div>
                 </div>
@@ -660,7 +708,10 @@
         }
 
         function CaseDetailModal({ item, onClose }) {
-            const [activeTab, setActiveTab] = React.useState('coil'); // 'coil', 'gauge', 'waste'
+            const images = getCaseImages(item);
+            const brand = getCaseBrand(item);
+            const model = getCaseModel(item);
+            const year = getCaseYear(item);
 
             return (
                 <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -670,8 +721,8 @@
                             <div class="flex items-center space-x-3">
                                 <Air4Logo className="h-8" variant="white" />
                                 <div>
-                                    <h3 class="text-lg font-bold text-white">{item.brand} {item.model} ({item.year})</h3>
-                                    <p class="text-xs text-slate-400">เลขไมล์: {item.mileage ? `${item.mileage} กม.` : 'ไม่ระบุ'}</p>
+                                    <h3 class="text-lg font-bold text-white">{brand} {model} ({year})</h3>
+                                    <p class="text-xs text-slate-400">เน€เธฅเธเนเธกเธฅเน: {item.mileage ? `${item.mileage} เธเธก.` : 'เนเธกเนเธฃเธฐเธเธธ'}</p>
                                 </div>
                             </div>
                             <button onClick={onClose} class="text-slate-400 hover:text-white text-xl">
@@ -679,126 +730,53 @@
                             </button>
                         </div>
 
-                        {/* Navigation Tabs */}
-                        <div class="bg-slate-100 border-b border-slate-200 px-6 pt-3 flex space-x-2">
-                            <button 
-                                onClick={() => setActiveTab('coil')}
-                                class={`px-4 py-2 text-sm font-semibold rounded-t-lg transition flex items-center ${activeTab === 'coil' ? 'bg-white text-blue-600 border-t-2 border-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-                            >
-                                <i class="fa-solid fa-snowflake mr-2"></i> คอยล์เย็น (ก่อน - หลังล้าง)
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('gauge')}
-                                class={`px-4 py-2 text-sm font-semibold rounded-t-lg transition flex items-center ${activeTab === 'gauge' ? 'bg-white text-blue-600 border-t-2 border-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-                            >
-                                <i class="fa-solid fa-gauge mr-2"></i> แรงดันน้ำยาแอร์
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('waste')}
-                                class={`px-4 py-2 text-sm font-semibold rounded-t-lg transition flex items-center ${activeTab === 'waste' ? 'bg-white text-blue-600 border-t-2 border-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-                            >
-                                <i class="fa-solid fa-droplet mr-2"></i> คราบน้ำเสีย
-                            </button>
-                        </div>
-
-                        {/* Modal Body Content */}
+                        {/* Modal Body Content - Responsive Gallery for ALL Images */}
                         <div class="p-6 overflow-y-auto flex-1">
-                            {/* TAB 1: COIL BEFORE / AFTER */}
-                            {activeTab === 'coil' && (
-                                <div class="space-y-4">
-                                    <div class="text-center mb-2">
-                                        <h4 class="text-base font-bold text-slate-800">เปรียบเทียบตู้แอร์ (คอยล์เย็น) ก่อน และ หลังการล้าง</h4>
-                                        <p class="text-xs text-slate-500">ขจัดสิ่งสกปรก ฝุ่นสะสม และเชื้อรา เพื่อลมแอร์ที่สะอาดบริสุทธิ์</p>
-                                    </div>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                                            <div class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 flex items-center justify-between">
-                                                <span>ก่อนล้าง (BEFORE)</span>
-                                                <i class="fa-solid fa-triangle-exclamation"></i>
-                                            </div>
-                                            <img 
-                                                src={item.beforeCoilImg} 
-                                                alt="สภาพก่อนล้าง" 
-                                                class="w-full h-64 object-cover"
-                                                onError={(e) => { e.target.src = 'https://placehold.co/600x400/333333/ffffff?text=Before+Wash'; }}
-                                            />
-                                        </div>
-                                        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                                            <div class="bg-green-600 text-white text-xs font-bold px-3 py-1.5 flex items-center justify-between">
-                                                <span>หลังล้างสะอาด (AFTER)</span>
-                                                <i class="fa-solid fa-circle-check"></i>
-                                            </div>
-                                            <img 
-                                                src={item.afterCoilImg} 
-                                                alt="สภาพหลังล้าง" 
-                                                class="w-full h-64 object-cover"
-                                                onError={(e) => { e.target.src = 'https://placehold.co/600x400/00aa44/ffffff?text=After+Clean'; }}
-                                            />
-                                        </div>
-                                    </div>
+                            <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-images text-blue-600"></i>
+                                    <h4 class="text-base font-bold text-slate-800">เธฃเธนเธเธ เธฒเธเธเธฅเธเธฒเธเธ—เธฑเนเธเธซเธกเธ” ({images.length})</h4>
                                 </div>
-                            )}
-
-                            {/* TAB 2: PRESSURE GAUGE */}
-                            {activeTab === 'gauge' && (
-                                <div class="space-y-4">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                                        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                                            <div class="bg-slate-800 text-white text-xs font-bold px-3 py-1.5">
-                                                รูปถ่ายเกจวัดแรงดันระบบแอร์
-                                            </div>
-                                            <img 
-                                                src={item.gaugeImg || 'https://placehold.co/600x400/1e293b/ffffff?text=Pressure+Gauge'} 
-                                                alt="เกจวัดแรงดัน" 
-                                                class="w-full h-64 object-cover"
-                                                onError={(e) => { e.target.src = 'https://placehold.co/600x400/1e293b/ffffff?text=Pressure+Gauge'; }}
-                                            />
-                                        </div>
-                                        <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-                                            <h4 class="text-base font-bold text-slate-800 border-b pb-2">สรุปค่าแรงดันน้ำยาแอร์</h4>
-                                            <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-200">
-                                                <span class="text-sm font-medium text-slate-600">Low Side Pressure</span>
-                                                <span class="text-lg font-extrabold text-blue-600">{item.pressureLow ? `${item.pressureLow} PSI` : 'ไม่ระบุ'}</span>
-                                            </div>
-                                            <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-200">
-                                                <span class="text-sm font-medium text-slate-600">High Side Pressure</span>
-                                                <span class="text-lg font-extrabold text-red-600">{item.pressureHigh ? `${item.pressureHigh} PSI` : 'ไม่ระบุ'}</span>
-                                            </div>
-                                            <div class="text-xs text-slate-500 bg-blue-50 p-3 rounded-lg border border-blue-100 text-blue-800">
-                                                <i class="fa-solid fa-circle-info mr-1"></i> ค่าแรงดันที่อยู่ในเกณฑ์มาตรฐานช่วยให้คอมเพรสเซอร์ทำงานได้เต็มประสิทธิภาพและประหยัดน้ำมัน
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="text-xs text-slate-600 bg-slate-100 px-3 py-1 rounded-full font-medium">
+                                    Low Side: {item.pressureLow ? `${item.pressureLow} PSI` : '-'} | High Side: {item.pressureHigh ? `${item.pressureHigh} PSI` : '-'}
                                 </div>
-                            )}
+                            </div>
 
-                            {/* TAB 3: WASTE WATER */}
-                            {activeTab === 'waste' && (
-                                <div class="space-y-4">
-                                    <div class="max-w-2xl mx-auto border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                                        <div class="bg-amber-800 text-white text-xs font-bold px-3 py-1.5 flex items-center justify-between">
-                                            <span>คราบน้ำเสียที่ชำระล้างออกมาจากตู้แอร์</span>
-                                            <i class="fa-solid fa-filter text-amber-300"></i>
+                            {images.length === 0 ? (
+                                <div class="text-center py-16 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                    <i class="fa-regular fa-image text-4xl mb-2 block"></i>
+                                    <p class="text-sm font-medium">เนเธกเนเธกเธตเธฃเธนเธเธ เธฒเธเธชเธณเธซเธฃเธฑเธเน€เธเธชเธเธตเน</p>
+                                </div>
+                            ) : (
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    {images.map((img, idx) => (
+                                        <div key={img.id || idx} class="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white flex flex-col">
+                                            <div class="bg-slate-800 text-white text-xs px-3 py-2 flex items-center justify-between font-mono">
+                                                <span class="truncate max-w-[180px]">{img.name || `Image ${idx + 1}`}</span>
+                                                <span class="text-[10px] bg-slate-700 text-blue-300 px-2 py-0.5 rounded uppercase">{img.type || 'unknown'}</span>
+                                            </div>
+                                            <div class="relative h-52 bg-slate-100">
+                                                <img 
+                                                    src={img.url} 
+                                                    alt={img.name || `Image ${idx + 1}`} 
+                                                    class="w-full h-full object-cover"
+                                                    onError={(e) => { e.target.src = 'https://placehold.co/600x400/1e293b/ffffff?text=Image+Error'; }}
+                                                />
+                                            </div>
                                         </div>
-                                        <img 
-                                            src={item.dirtyWaterImg || 'https://placehold.co/600x400/78350f/ffffff?text=Dirty+Water'} 
-                                            alt="คราบน้ำเสีย" 
-                                            class="w-full h-80 object-cover"
-                                            onError={(e) => { e.target.src = 'https://placehold.co/600x400/78350f/ffffff?text=Dirty+Water'; }}
-                                        />
-                                    </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
 
                         {/* Modal Footer */}
                         <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-between items-center text-xs text-slate-500">
-                            <span>{item.brand} {item.model}</span>
+                            <span>{brand} {model}</span>
                             <button 
                                 onClick={onClose}
                                 class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-4 py-2 rounded-lg text-sm transition"
                             >
-                                ปิดหน้าต่าง
+                                เธเธดเธ”เธซเธเนเธฒเธ•เนเธฒเธ
                             </button>
                         </div>
                     </div>
@@ -808,28 +786,45 @@
 
         function AddEditCaseModal({ item, onClose, onSave }) {
             const isEdit = !!item;
+            const existingImages = getCaseImages(item);
+
             const [formData, setFormData] = React.useState({
-                id: item?.id || `case-${Date.now()}`,
-                brand: item?.brand || 'Toyota',
-                model: item?.model || '',
-                year: item?.year || new Date().getFullYear().toString(),
+                id: getCaseId(item) || `case-${Date.now()}`,
+                brand: getCaseBrand(item) || 'Toyota',
+                model: getCaseModel(item) || '',
+                year: getCaseYear(item) || new Date().getFullYear().toString(),
                 mileage: item?.mileage || '',
                 pressureLow: item?.pressureLow || '',
                 pressureHigh: item?.pressureHigh || '',
-                date: item?.date || new Date().toISOString().split('T')[0],
-                beforeCoilImg: item?.beforeCoilImg || 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
-                afterCoilImg: item?.afterCoilImg || 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80',
-                gaugeImg: item?.gaugeImg || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-                dirtyWaterImg: item?.dirtyWaterImg || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80'
+                date: item?.date || new Date().toISOString().split('T')[0]
             });
+
+            const [imageUrlsText, setImageUrlsText] = React.useState(
+                existingImages.map(img => img.url).join('\n')
+            );
 
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if(!formData.brand || !formData.model) {
-                    alert('กรุณากรอกยี่ห้อและรุ่นรถ');
+                    alert('เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธขเธตเนเธซเนเธญเนเธฅเธฐเธฃเธธเนเธเธฃเธ–');
                     return;
                 }
-                onSave(formData);
+
+                const urls = imageUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
+                const updatedImages = urls.map((url, idx) => {
+                    const matched = existingImages[idx];
+                    return {
+                        id: matched?.id || `img-${Date.now()}-${idx}`,
+                        name: matched?.name || `IMG${String(idx + 1).padStart(3, '0')}.jpg`,
+                        url: url,
+                        type: matched?.type || 'unknown'
+                    };
+                });
+
+                onSave({
+                    ...formData,
+                    images: updatedImages
+                });
             };
 
             return (
@@ -838,7 +833,7 @@
                         <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
                             <h3 class="text-base font-bold flex items-center">
                                 <i class="fa-solid fa-car-rear mr-2 text-blue-400"></i>
-                                {isEdit ? 'แก้ไขข้อมูลเคสล้างคอยล์เย็น' : 'เพิ่มเคสผลงานล้างคอยล์เย็นใหม่'}
+                                {isEdit ? 'เนเธเนเนเธเธเนเธญเธกเธนเธฅเน€เธเธชเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธ' : 'เน€เธเธดเนเธกเน€เธเธชเธเธฅเธเธฒเธเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเนเธซเธกเน'}
                             </h3>
                             <button onClick={onClose} class="text-slate-400 hover:text-white">
                                 <i class="fa-solid fa-xmark"></i>
@@ -848,34 +843,34 @@
                         <form onSubmit={handleSubmit} class="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-sm">
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">ยี่ห้อรถ *</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เธขเธตเนเธซเนเธญเธฃเธ– *</label>
                                     <input 
                                         type="text" 
                                         required
                                         value={formData.brand}
                                         onChange={(e) => setFormData({...formData, brand: e.target.value})}
-                                        placeholder="เช่น Toyota, Honda" 
+                                        placeholder="เน€เธเนเธ Toyota, Honda" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">รุ่นรถ *</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธธเนเธเธฃเธ– *</label>
                                     <input 
                                         type="text" 
                                         required
                                         value={formData.model}
                                         onChange={(e) => setFormData({...formData, model: e.target.value})}
-                                        placeholder="เช่น Camry, Civic" 
+                                        placeholder="เน€เธเนเธ Camry, Civic" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">ปีรถ (ค.ศ.)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธตเธฃเธ– (เธ.เธจ.)</label>
                                     <input 
                                         type="text" 
                                         value={formData.year}
                                         onChange={(e) => setFormData({...formData, year: e.target.value})}
-                                        placeholder="เช่น 2022" 
+                                        placeholder="เน€เธเนเธ 2022" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
@@ -883,78 +878,47 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เลขไมล์ (กม.)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธฅเธเนเธกเธฅเน (เธเธก.)</label>
                                     <input 
                                         type="text" 
                                         value={formData.mileage}
                                         onChange={(e) => setFormData({...formData, mileage: e.target.value})}
-                                        placeholder="เช่น 85,000" 
+                                        placeholder="เน€เธเนเธ 85,000" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">แรงดัน Low Side (PSI)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เนเธฃเธเธ”เธฑเธ Low Side (PSI)</label>
                                     <input 
                                         type="text" 
                                         value={formData.pressureLow}
                                         onChange={(e) => setFormData({...formData, pressureLow: e.target.value})}
-                                        placeholder="เช่น 32" 
+                                        placeholder="เน€เธเนเธ 32" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">แรงดัน High Side (PSI)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เนเธฃเธเธ”เธฑเธ High Side (PSI)</label>
                                     <input 
                                         type="text" 
                                         value={formData.pressureHigh}
                                         onChange={(e) => setFormData({...formData, pressureHigh: e.target.value})}
-                                        placeholder="เช่น 185" 
+                                        placeholder="เน€เธเนเธ 185" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                             </div>
 
-                            <div class="border-t border-slate-200 pt-3 font-semibold text-slate-800 text-xs">
-                                ลิงก์ URL รูปภาพผลงาน (รูป Before - After & เกจวัด)
-                            </div>
-
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs text-slate-600 mb-1">URL รูปคอยล์เย็น "ก่อนล้าง"</label>
-                                    <input 
-                                        type="url" 
-                                        value={formData.beforeCoilImg}
-                                        onChange={(e) => setFormData({...formData, beforeCoilImg: e.target.value})}
-                                        class="w-full px-3 py-2 border rounded-lg text-xs font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-600 mb-1">URL รูปคอยล์เย็น "หลังล้าง"</label>
-                                    <input 
-                                        type="url" 
-                                        value={formData.afterCoilImg}
-                                        onChange={(e) => setFormData({...formData, afterCoilImg: e.target.value})}
-                                        class="w-full px-3 py-2 border rounded-lg text-xs font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-600 mb-1">URL รูปเกจวัดแรงดันน้ำยาแอร์</label>
-                                    <input 
-                                        type="url" 
-                                        value={formData.gaugeImg}
-                                        onChange={(e) => setFormData({...formData, gaugeImg: e.target.value})}
-                                        class="w-full px-3 py-2 border rounded-lg text-xs font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-600 mb-1">URL รูปคราบน้ำเสียที่ล้างออกมา</label>
-                                    <input 
-                                        type="url" 
-                                        value={formData.dirtyWaterImg}
-                                        onChange={(e) => setFormData({...formData, dirtyWaterImg: e.target.value})}
-                                        class="w-full px-3 py-2 border rounded-lg text-xs font-mono"
-                                    />
-                                </div>
+                            <div class="border-t border-slate-200 pt-3">
+                                <label class="block font-semibold text-slate-800 text-xs mb-1">เธฃเธฒเธขเธเธฒเธฃ URL เธฃเธนเธเธ เธฒเธเธเธฅเธเธฒเธ (เนเธชเน 1 URL เธ•เนเธญ 1 เธเธฃเธฃเธ—เธฑเธ”)</label>
+                                <textarea 
+                                    rows="5"
+                                    value={imageUrlsText}
+                                    onChange={(e) => setImageUrlsText(e.target.value)}
+                                    placeholder="https://images.example.com/photo1.jpg&#10;https://images.example.com/photo2.jpg"
+                                    class="w-full px-3 py-2 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"
+                                ></textarea>
+                                <span class="text-[11px] text-slate-500">เธฃเธฐเธเธเธเธฐเธชเธฃเนเธฒเธเธญเธฒเธฃเนเน€เธฃเธขเน images[] เธเธฃเนเธญเธกเธเธณเธซเธเธ”เธเนเธฒ type: "unknown" เนเธซเนเธญเธฑเธ•เนเธเธกเธฑเธ•เธด</span>
                             </div>
 
                             <div class="pt-4 flex justify-end space-x-3 border-t">
@@ -963,13 +927,13 @@
                                     onClick={onClose}
                                     class="px-4 py-2 border text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50"
                                 >
-                                    ยกเลิก
+                                    เธขเธเน€เธฅเธดเธ
                                 </button>
                                 <button 
                                     type="submit" 
                                     class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow"
                                 >
-                                    {isEdit ? 'บันทึกการแก้ไข' : 'บันทึกเคสใหม่'}
+                                    {isEdit ? 'เธเธฑเธเธ—เธถเธเธเธฒเธฃเนเธเนเนเธ' : 'เธเธฑเธเธ—เธถเธเน€เธเธชเนเธซเธกเน'}
                                 </button>
                             </div>
                         </form>
@@ -987,7 +951,7 @@
                         <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
                             <h3 class="text-base font-bold flex items-center">
                                 <i class="fa-solid fa-sliders mr-2 text-blue-400"></i>
-                                ตั้งค่าข้อความร้านค้า
+                                เธ•เธฑเนเธเธเนเธฒเธเนเธญเธเธงเธฒเธกเธฃเนเธฒเธเธเนเธฒ
                             </h3>
                             <button onClick={onClose} class="text-slate-400 hover:text-white">
                                 <i class="fa-solid fa-xmark"></i>
@@ -996,7 +960,7 @@
 
                         <form onSubmit={(e) => { e.preventDefault(); onSave(data); }} class="p-6 space-y-4 text-sm">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อศูนย์บริการ</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธทเนเธญเธจเธนเธเธขเนเธเธฃเธดเธเธฒเธฃ</label>
                                 <input 
                                     type="text" 
                                     value={data.name}
@@ -1005,7 +969,7 @@
                                 />
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">สโลแกนย่อ</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">เธชเนเธฅเนเธเธเธขเนเธญ</label>
                                 <input 
                                     type="text" 
                                     value={data.slogan}
@@ -1014,7 +978,7 @@
                                 />
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">พาดหัวแบนเนอร์หลัก (Hero Title)</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธฒเธ”เธซเธฑเธงเนเธเธเน€เธเธญเธฃเนเธซเธฅเธฑเธ (Hero Title)</label>
                                 <input 
                                     type="text" 
                                     value={data.heroTitle}
@@ -1023,7 +987,7 @@
                                 />
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">คำอธิบายใต้พาดหัว</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธณเธญเธเธดเธเธฒเธขเนเธ•เนเธเธฒเธ”เธซเธฑเธง</label>
                                 <textarea 
                                     rows="2"
                                     value={data.heroSub}
@@ -1038,13 +1002,13 @@
                                     onClick={onClose}
                                     class="px-4 py-2 border text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50"
                                 >
-                                    ยกเลิก
+                                    เธขเธเน€เธฅเธดเธ
                                 </button>
                                 <button 
                                     type="submit" 
                                     class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow"
                                 >
-                                    บันทึกข้อความ
+                                    เธเธฑเธเธ—เธถเธเธเนเธญเธเธงเธฒเธก
                                 </button>
                             </div>
                         </form>
@@ -1059,8 +1023,8 @@
                     <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-100 p-6 text-center">
                         <div class="mb-4">
                             <Air4Logo className="h-12 mx-auto" variant="blue" />
-                            <h3 class="text-xl font-bold text-slate-800 mt-2">เข้าสู่ระบบใช้งาน</h3>
-                            <p class="text-xs text-slate-500 mt-1">เลือกประเภทการเข้าใช้งานเพื่อทดสอบระบบ</p>
+                            <h3 class="text-xl font-bold text-slate-800 mt-2">เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเนเธเนเธเธฒเธ</h3>
+                            <p class="text-xs text-slate-500 mt-1">เน€เธฅเธทเธญเธเธเธฃเธฐเน€เธ เธ—เธเธฒเธฃเน€เธเนเธฒเนเธเนเธเธฒเธเน€เธเธทเนเธญเธ—เธ”เธชเธญเธเธฃเธฐเธเธ</p>
                         </div>
 
                         <div class="space-y-3 my-6">
@@ -1069,7 +1033,7 @@
                                 class="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm shadow-md transition flex items-center justify-center space-x-2"
                             >
                                 <i class="fa-solid fa-user-shield text-amber-400"></i>
-                                <span>เข้าสู่ระบบเป็น ผู้ดูแลระบบ (Admin)</span>
+                                <span>เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเน€เธเนเธ เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ (Admin)</span>
                             </button>
                             
                             <button 
@@ -1077,7 +1041,7 @@
                                 class="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-xl text-sm transition flex items-center justify-center space-x-2 border border-slate-200"
                             >
                                 <i class="fa-solid fa-eye text-blue-600"></i>
-                                <span>เข้าชมระบบในฐานะ ลูกค้า / ผู้เยี่ยมชม</span>
+                                <span>เน€เธเนเธฒเธเธกเธฃเธฐเธเธเนเธเธเธฒเธเธฐ เธฅเธนเธเธเนเธฒ / เธเธนเนเน€เธขเธตเนเธขเธกเธเธก</span>
                             </button>
                         </div>
 
@@ -1085,7 +1049,7 @@
                             onClick={onClose}
                             class="text-xs text-slate-400 hover:text-slate-600 underline"
                         >
-                            ปิดหน้าต่าง
+                            เธเธดเธ”เธซเธเนเธฒเธ•เนเธฒเธ
                         </button>
                     </div>
                 </div>
