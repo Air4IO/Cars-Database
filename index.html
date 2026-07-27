@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIR-4 - เธเธฅเธฑเธเธเธฅเธเธฒเธเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเธฃเธ–เธขเธเธ•เน</title>
+    <title>AIR-4 - คลังผลงานการล้างคอยล์เย็นรถยนต์</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -53,10 +53,10 @@
     <script type="text/babel">
         const DEFAULT_SHOP_CONFIG = {
             name: "AIR-4",
-            slogan: "เธจเธนเธเธขเนเธเธฃเธดเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเนเธฅเธฐเธ”เธนเนเธฅเธฃเธฐเธเธเนเธญเธฃเนเธฃเธ–เธขเธเธ•เนเธกเธฒเธ•เธฃเธเธฒเธเธชเธนเธ",
-            heroTitle: "เธเธฅเธฑเธเธเธฅเธเธฒเธเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเธฃเธ–เธขเธเธ•เน",
-            heroSub: "เธ เธฒเธเน€เธเธฃเธตเธขเธเน€เธ—เธตเธขเธเธเธงเธฒเธกเธชเธฐเธญเธฒเธ” เธชเธ เธฒเธเธเธญเธขเธฅเนเน€เธขเนเธ เธเนเธฒเนเธฃเธเธ”เธฑเธเธเนเธณเธขเธฒ เนเธฅเธฐเธเธฃเธฒเธเธเนเธณเน€เธชเธตเธขเธเธฃเธดเธเธเนเธญเธ-เธซเธฅเธฑเธเธเธฒเธฃเธเธฃเธดเธเธฒเธฃ",
-            footerText: "ยฉ 2026 AIR-4 Auto Air Conditioning Service Center. เธชเธเธงเธเธฅเธดเธเธชเธดเธ—เธเธดเน"
+            slogan: "ศูนย์บริการล้างคอยล์เย็นและดูแลระบบแอร์รถยนต์มาตรฐานสูง",
+            heroTitle: "คลังผลงานการล้างคอยล์เย็นรถยนต์",
+            heroSub: "ภาพเปรียบเทียบความสะอาด สภาพคอยล์เย็น ค่าแรงดันน้ำยา และคราบน้ำเสียจริงก่อน-หลังการบริการ",
+            footerText: "© 2026 AIR-4 Auto Air Conditioning Service Center. สงวนลิขสิทธิ์"
         };
 
         const INITIAL_CASES = [
@@ -245,9 +245,9 @@
 
             // Delete case handler
             const handleDeleteCase = (id) => {
-                if(window.confirm('เธเธธเธ“เธ•เนเธญเธเธเธฒเธฃเธฅเธเน€เธเธชเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน?')) {
+                if(window.confirm('คุณต้องการลบเคสนี้ใช่หรือไม่?')) {
                     setCases(prev => prev.filter(c => c.id !== id));
-                    showToast('เธฅเธเธเนเธญเธกเธนเธฅเน€เธเธชเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง');
+                    showToast('ลบข้อมูลเคสเรียบร้อยแล้ว');
                 }
             };
 
@@ -257,7 +257,7 @@
                     <LoginPage 
                         onLogin={(userData) => {
                             setUser(userData);
-                            showToast(`เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเนเธเธเธฒเธเธฐ ${userData.role === 'admin' ? 'Admin' : 'เธเธนเนเน€เธขเธตเนเธขเธกเธเธก'} เน€เธฃเธตเธขเธเธฃเนเธญเธข`);
+                            showToast(`เข้าสู่ระบบในฐานะ ${userData.role === 'admin' ? 'Admin' : 'ผู้เยี่ยมชม'} เรียบร้อย`);
                         }} 
                     />
                 );
@@ -285,29 +285,29 @@
                                                 class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium px-3 py-2 rounded-lg flex items-center shadow-md transition"
                                             >
                                                 <i class="fa-solid font-bold fa-plus mr-1.5"></i>
-                                                เน€เธเธดเนเธกเน€เธเธชเนเธซเธกเน
+                                                เพิ่มเคสใหม่
                                             </button>
                                             <button 
                                                 onClick={() => setShowShopConfigModal(true)}
                                                 class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs sm:text-sm font-medium px-3 py-2 rounded-lg flex items-center border border-slate-700 transition"
-                                                title="เนเธเนเนเธเธเนเธญเธเธงเธฒเธกเธฃเนเธฒเธเธเนเธฒ"
+                                                title="แก้ไขข้อความร้านค้า"
                                             >
                                                 <i class="fa-solid fa-gear mr-1.5"></i>
-                                                <span class="hidden md:inline">เธ•เธฑเนเธเธเนเธฒเธฃเนเธฒเธ</span>
+                                                <span class="hidden md:inline">ตั้งค่าร้าน</span>
                                             </button>
                                         </>
                                     )}
 
                                     <div class="flex items-center space-x-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
                                         <span class={`inline-block w-2.5 h-2.5 rounded-full ${user.role === 'admin' ? 'bg-amber-400' : 'bg-green-400'}`}></span>
-                                        <span class="text-xs sm:text-sm font-medium">{user.role === 'admin' ? 'เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ (Admin)' : 'เธฅเธนเธเธเนเธฒ / เธเธนเนเน€เธขเธตเนเธขเธกเธเธก'}</span>
+                                        <span class="text-xs sm:text-sm font-medium">{user.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'ลูกค้า / ผู้เยี่ยมชม'}</span>
                                         <button 
-                                            onClick={() => { setUser(null); showToast('เธญเธญเธเธเธฒเธเธฃเธฐเธเธเน€เธฃเธตเธขเธเธฃเนเธญเธข'); }} 
+                                            onClick={() => { setUser(null); showToast('ออกจากระบบเรียบร้อย'); }} 
                                             class="text-slate-400 hover:text-red-400 text-xs ml-2 pl-2 border-l border-slate-700 flex items-center"
-                                            title="เธญเธญเธเธเธฒเธเธฃเธฐเธเธ"
+                                            title="ออกจากระบบ"
                                         >
                                             <i class="fa-solid fa-right-from-bracket mr-1"></i>
-                                            <span class="hidden sm:inline">เธญเธญเธเธเธฒเธเธฃเธฐเธเธ</span>
+                                            <span class="hidden sm:inline">ออกจากระบบ</span>
                                         </button>
                                     </div>
                                 </div>
@@ -320,7 +320,7 @@
                                 <div class="mb-6 md:mb-0 max-w-2xl text-center md:text-left">
                                     <div class="inline-flex items-center space-x-2 bg-blue-900/60 text-blue-300 text-xs font-semibold px-3 py-1 rounded-full border border-blue-700/50 mb-3">
                                         <i class="fa-solid fa-circle-check text-blue-400"></i>
-                                        <span>เธกเธฒเธ•เธฃเธเธฒเธเธ•เธฃเธงเธเน€เธเนเธเธฃเธฐเธเธเนเธญเธฃเน AIR-4</span>
+                                        <span>มาตรฐานตรวจเช็คระบบแอร์ AIR-4</span>
                                     </div>
                                     <h1 class="text-2xl sm:text-4xl font-bold tracking-tight mb-2 text-white">{shopConfig.heroTitle}</h1>
                                     <p class="text-slate-300 text-sm sm:text-base">{shopConfig.heroSub}</p>
@@ -328,11 +328,11 @@
                                 <div class="flex items-center space-x-4 bg-slate-800/80 p-4 rounded-xl border border-slate-700 backdrop-blur">
                                     <div class="text-center px-4 border-r border-slate-700">
                                         <div class="text-2xl sm:text-3xl font-extrabold text-blue-400">{cases.length}</div>
-                                        <div class="text-xs text-slate-400">เน€เธเธชเธ•เธฑเธงเธญเธขเนเธฒเธเนเธเธเธฅเธฑเธ</div>
+                                        <div class="text-xs text-slate-400">เคสตัวอย่างในคลัง</div>
                                     </div>
                                     <div class="text-center px-4">
                                         <div class="text-2xl sm:text-3xl font-extrabold text-green-400">100%</div>
-                                        <div class="text-xs text-slate-400">เธชเธฐเธญเธฒเธ” เธเธฅเธญเธ”เน€เธเธทเนเธญ</div>
+                                        <div class="text-xs text-slate-400">สะอาด ปลอดเชื้อ</div>
                                     </div>
                                 </div>
                             </div>
@@ -345,15 +345,15 @@
                                 <div class="flex flex-col md:flex-row items-center justify-between mb-4 pb-4 border-b border-slate-100 gap-2">
                                     <div class="flex items-center space-x-2 w-full md:w-auto">
                                         <i class="fa-solid fa-filter text-blue-600"></i>
-                                        <h2 class="text-base font-semibold text-slate-800">เธเนเธเธซเธฒเนเธฅเธฐเธเธฃเธญเธเธฃเธธเนเธเธฃเธ–</h2>
-                                        <span class="text-xs text-slate-500 font-normal">({filteredCases.length} เธฃเธฒเธขเธเธฒเธฃ)</span>
+                                        <h2 class="text-base font-semibold text-slate-800">ค้นหาและกรองรุ่นรถ</h2>
+                                        <span class="text-xs text-slate-500 font-normal">({filteredCases.length} รายการ)</span>
                                     </div>
                                     {(searchKeyword || selectedBrand || selectedModel || selectedYear) && (
                                         <button 
                                             onClick={handleResetFilters}
                                             class="text-xs text-red-600 hover:text-red-800 font-medium flex items-center self-end md:self-auto"
                                         >
-                                            <i class="fa-solid fa-rotate-left mr-1"></i> เธฅเนเธฒเธเธ•เธฑเธงเธเธฃเธญเธเธ—เธฑเนเธเธซเธกเธ”
+                                            <i class="fa-solid fa-rotate-left mr-1"></i> ล้างตัวกรองทั้งหมด
                                         </button>
                                     )}
                                 </div>
@@ -361,13 +361,13 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     {/* Keyword Search */}
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">เธเนเธเธซเธฒเธเธณเธเธงเธฑเธ / เธขเธตเนเธซเนเธญ / เธฃเธธเนเธ</label>                                        <div class="relative">
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">ค้นหาคำขวัญ / ยี่ห้อ / รุ่น</label>                                        <div class="relative">
                                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                                             <input 
                                                 type="text"
                                                 value={searchKeyword}
                                                 onChange={(e) => setSearchKeyword(e.target.value)}
-                                                placeholder="เน€เธเนเธ Toyota, Civic, 2022..."
+                                                placeholder="เช่น Toyota, Civic, 2022..."
                                                 class="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                             />
                                         </div>
@@ -375,13 +375,13 @@
 
                                     {/* Brand Select */}
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">เธขเธตเนเธซเนเธญเธฃเธ– (Brand)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">ยี่ห้อรถ (Brand)</label>
                                         <select 
                                             value={selectedBrand}
                                             onChange={(e) => { setSelectedBrand(e.target.value); setSelectedModel(''); }}
                                             class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                         >
-                                            <option value="">-- เธ—เธฑเนเธเธซเธกเธ”เธ—เธธเธเธขเธตเนเธซเนเธญ --</option>
+                                            <option value="">-- ทั้งหมดทุกยี่ห้อ --</option>
                                             {brands.map(b => (
                                                 <option key={b} value={b}>{b}</option>
                                             ))}
@@ -390,13 +390,13 @@
 
                                     {/* Model Select */}
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">เธฃเธธเนเธเธฃเธ– (Model)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">รุ่นรถ (Model)</label>
                                         <select 
                                             value={selectedModel}
                                             onChange={(e) => setSelectedModel(e.target.value)}
                                             class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                         >
-                                            <option value="">-- เธ—เธฑเนเธเธซเธกเธ”เธ—เธธเธเธฃเธธเนเธ --</option>
+                                            <option value="">-- ทั้งหมดทุกรุ่น --</option>
                                             {models.map(m => (
                                                 <option key={m} value={m}>{m}</option>
                                             ))}
@@ -405,13 +405,13 @@
 
                                     {/* Year Select */}
                                     <div>
-                                        <label class="block text-xs font-medium text-slate-600 mb-1">เธเธตเธฃเธ– (Year)</label>
+                                        <label class="block text-xs font-medium text-slate-600 mb-1">ปีรถ (Year)</label>
                                         <select 
                                             value={selectedYear}
                                             onChange={(e) => setSelectedYear(e.target.value)}
                                             class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                                         >
-                                            <option value="">-- เธ—เธฑเนเธเธซเธกเธ”เธ—เธธเธเธเธต --</option>
+                                            <option value="">-- ทั้งหมดทุกปี --</option>
                                             {years.map(y => (
                                                 <option key={y} value={y}>{y}</option>
                                             ))}
@@ -431,13 +431,13 @@
                                     <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 text-2xl mb-3">
                                         <i class="fa-solid fa-car-tunnel"></i>
                                     </div>
-                                    <h3 class="text-slate-700 font-semibold mb-1">เนเธกเนเธเธเธเนเธญเธกเธนเธฅเน€เธเธชเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเธ—เธตเนเธ•เธฃเธเธเธฑเธ</h3>
-                                    <p class="text-slate-500 text-sm mb-4">เธฅเธญเธเธเธฃเธฑเธเน€เธเธฅเธตเนเธขเธเธ•เธฑเธงเธเธฃเธญเธ เธซเธฃเธทเธญเธเนเธเธซเธฒเธ”เนเธงเธขเธเธณเธญเธทเนเธ</p>
+                                    <h3 class="text-slate-700 font-semibold mb-1">ไม่พบข้อมูลเคสการล้างคอยล์เย็นที่ตรงกัน</h3>
+                                    <p class="text-slate-500 text-sm mb-4">ลองปรับเปลี่ยนตัวกรอง หรือค้นหาด้วยคำอื่น</p>
                                     <button 
                                         onClick={handleResetFilters}
                                         class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 rounded-lg font-medium"
                                     >
-                                        เธฅเนเธฒเธเธ•เธฑเธงเธเธฃเธญเธเธ—เธฑเนเธเธซเธกเธ”
+                                        ล้างตัวกรองทั้งหมด
                                     </button>
                                 </div>
                             ) : (
@@ -463,7 +463,7 @@
                                                     </div>
                                                     <div class="bg-slate-800 text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700">
                                                         <i class="fa-solid fa-gauge-high mr-1 text-slate-400"></i>
-                                                        {item.mileage ? `${item.mileage} เธเธก.` : 'เนเธกเนเธฃเธฐเธเธธ'}
+                                                        {item.mileage ? `${item.mileage} กม.` : 'ไม่ระบุ'}
                                                     </div>
                                                 </div>
 
@@ -495,7 +495,7 @@
 
                                                     <div class="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition flex items-center justify-center">
                                                         <span class="bg-white/90 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg backdrop-blur flex items-center group-hover:scale-110 transition">
-                                                            <i class="fa-solid fa-expand mr-1.5 text-blue-600"></i> เธเธฅเธดเธเน€เธเธทเนเธญเธ”เธนเธฃเธนเธเธเธขเธฒเธข ({images.length})
+                                                            <i class="fa-solid fa-expand mr-1.5 text-blue-600"></i> คลิกเพื่อดูรูปขยาย ({images.length})
                                                         </span>
                                                     </div>
                                                 </div>
@@ -504,19 +504,19 @@
                                                 <div class="p-4 flex-1 flex flex-col justify-between bg-slate-50/50">
                                                     <div class="grid grid-cols-2 gap-2 text-xs mb-3">
                                                         <div class="bg-white p-2 rounded-lg border border-slate-200">
-                                                            <span class="text-slate-500 block text-[10px]">เนเธฃเธเธ”เธฑเธ Low Side</span>
-                                                            <span class="font-bold text-slate-800 text-sm">{item.pressureLow ? `${item.pressureLow} PSI` : 'เนเธกเนเนเธ”เนเธฃเธฐเธเธธ'}</span>
+                                                            <span class="text-slate-500 block text-[10px]">แรงดัน Low Side</span>
+                                                            <span class="font-bold text-slate-800 text-sm">{item.pressureLow ? `${item.pressureLow} PSI` : 'ไม่ได้ระบุ'}</span>
                                                         </div>
                                                         <div class="bg-white p-2 rounded-lg border border-slate-200">
-                                                            <span class="text-slate-500 block text-[10px]">เนเธฃเธเธ”เธฑเธ High Side</span>
-                                                            <span class="font-bold text-slate-800 text-sm">{item.pressureHigh ? `${item.pressureHigh} PSI` : 'เนเธกเนเนเธ”เนเธฃเธฐเธเธธ'}</span>
+                                                            <span class="text-slate-500 block text-[10px]">แรงดัน High Side</span>
+                                                            <span class="font-bold text-slate-800 text-sm">{item.pressureHigh ? `${item.pressureHigh} PSI` : 'ไม่ได้ระบุ'}</span>
                                                         </div>
                                                     </div>
 
                                                     {/* Admin Actions or View Action */}
                                                     <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
                                                         <span class="text-[11px] text-slate-400">
-                                                            <i class="fa-regular fa-calendar mr-1"></i> {item.date || 'เธฅเนเธฒเธชเธธเธ”'}
+                                                            <i class="fa-regular fa-calendar mr-1"></i> {item.date || 'ล่าสุด'}
                                                         </span>
 
                                                         <div class="flex items-center space-x-2">
@@ -525,14 +525,14 @@
                                                                     <button 
                                                                         onClick={() => setShowAddEditModal(item)}
                                                                         class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition"
-                                                                        title="เนเธเนเนเธเน€เธเธชเธเธตเน"
+                                                                        title="แก้ไขเคสนี้"
                                                                     >
                                                                         <i class="fa-solid fa-pen-to-square"></i>
                                                                     </button>
                                                                     <button 
                                                                         onClick={() => handleDeleteCase(caseId)}
                                                                         class="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded transition"
-                                                                        title="เธฅเธเน€เธเธชเธเธตเน"
+                                                                        title="ลบเคสนี้"
                                                                     >
                                                                         <i class="fa-solid fa-trash-can"></i>
                                                                     </button>
@@ -542,7 +542,7 @@
                                                                 onClick={() => setShowCaseModal(item)}
                                                                 class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium text-xs px-3 py-1.5 rounded-lg transition"
                                                             >
-                                                                เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธฃเธนเธ <i class="fa-solid fa-chevron-right ml-1 text-[10px]"></i>
+                                                                รายละเอียดรูป <i class="fa-solid fa-chevron-right ml-1 text-[10px]"></i>
                                                             </button>
                                                         </div>
                                                     </div>
@@ -590,7 +590,7 @@
                                     return [savedCase, ...prev];
                                 });
                                 setShowAddEditModal(false);
-                                showToast(savedCase.id ? 'เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเน€เธเธชเน€เธฃเธตเธขเธเธฃเนเธญเธข' : 'เน€เธเธดเนเธกเน€เธเธชเนเธซเธกเนเน€เธฃเธตเธขเธเธฃเนเธญเธข');
+                                showToast(savedCase.id ? 'บันทึกข้อมูลเคสเรียบร้อย' : 'เพิ่มเคสใหม่เรียบร้อย');
                             }}
                         />
                     )}
@@ -603,7 +603,7 @@
                             onSave={(newConfig) => {
                                 setShopConfig(newConfig);
                                 setShowShopConfigModal(false);
-                                showToast('เธเธฃเธฑเธเน€เธเธฅเธตเนเธขเธเธเนเธญเธเธงเธฒเธกเธฃเนเธฒเธเธเนเธฒเน€เธฃเธตเธขเธเธฃเนเธญเธขเนเธฅเนเธง');
+                                showToast('ปรับเปลี่ยนข้อความร้านค้าเรียบร้อยแล้ว');
                             }}
                         />
                     )}
@@ -645,46 +645,46 @@
                             <div class="inline-block p-4 bg-slate-800/80 rounded-2xl border border-slate-700/50 mb-4 shadow-inner">
                                 <Air4Logo className="h-12 sm:h-14 mx-auto" variant="white" />
                             </div>
-                            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wide">เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเธ”เธนเธเธฅเธเธฒเธ</h1>
-                            <p class="text-xs sm:text-sm text-slate-400 mt-1.5">เธเธฅเธฑเธเธเธฅเธเธฒเธเธเธฒเธฃเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเนเธฅเธฐเธ”เธนเนเธฅเธฃเธฐเธเธเนเธญเธฃเนเธฃเธ–เธขเธเธ•เน AIR-4</p>
+                            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wide">เข้าสู่ระบบดูผลงาน</h1>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-1.5">คลังผลงานการล้างคอยล์เย็นและดูแลระบบแอร์รถยนต์ AIR-4</p>
                         </div>
 
                         {/* Quick Selection Buttons */}
                         <div class="space-y-3 mb-6">
                             <button 
-                                onClick={() => onLogin({ role: 'customer', name: 'เธฅเธนเธเธเนเธฒ / เธเธนเนเน€เธขเธตเนเธขเธกเธเธก' })}
+                                onClick={() => onLogin({ role: 'customer', name: 'ลูกค้า / ผู้เยี่ยมชม' })}
                                 class="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold rounded-xl text-sm shadow-lg shadow-blue-900/40 transition transform active:scale-98 flex items-center justify-center space-x-2.5 border border-blue-400/30"
                             >
                                 <i class="fa-solid fa-eye text-blue-200"></i>
-                                <span>เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเน€เธเนเธ "เธฅเธนเธเธเนเธฒ / เธเธนเนเน€เธขเธตเนเธขเธกเธเธก"</span>
+                                <span>เข้าสู่ระบบเป็น "ลูกค้า / ผู้เยี่ยมชม"</span>
                             </button>
 
                             <button 
-                                onClick={() => onLogin({ role: 'admin', name: 'เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ Admin' })}
+                                onClick={() => onLogin({ role: 'admin', name: 'ผู้ดูแลระบบ Admin' })}
                                 class="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-xl text-xs sm:text-sm transition flex items-center justify-center space-x-2 border border-slate-700 hover:border-slate-600"
                             >
                                 <i class="fa-solid fa-user-shield text-amber-400"></i>
-                                <span>เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเน€เธเนเธ "เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ (Admin)"</span>
+                                <span>เข้าสู่ระบบเป็น "ผู้ดูแลระบบ (Admin)"</span>
                             </button>
                         </div>
 
                         {/* Divider */}
                         <div class="relative my-6 text-center">
                             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
-                            <span class="relative bg-slate-900 px-3 text-[11px] text-slate-500">เธซเธฃเธทเธญ เนเธชเนเธเธทเนเธญเธเธนเนเนเธเนเน€เธเธทเนเธญเน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธ</span>
+                            <span class="relative bg-slate-900 px-3 text-[11px] text-slate-500">หรือ ใส่ชื่อผู้ใช้เพื่อเข้าสู่ระบบ</span>
                         </div>
 
                         {/* Custom Username Input */}
                         <form onSubmit={handleCustomLogin} class="space-y-3 text-left">
                             <div>
-                                <label class="block text-xs font-medium text-slate-300 mb-1">เธเธทเนเธญเธเธนเนเนเธเนเธเธฒเธ (Username)</label>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อผู้ใช้งาน (Username)</label>
                                 <div class="relative">
                                     <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
                                     <input 
                                         type="text" 
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        placeholder="เน€เธเนเธ admin เธซเธฃเธทเธญ customer"
+                                        placeholder="เช่น admin หรือ customer"
                                         class="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
@@ -695,12 +695,12 @@
                                 disabled={!username.trim()}
                                 class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-white font-medium text-xs rounded-xl transition border border-slate-700"
                             >
-                                เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธ
+                                เข้าสู่ระบบ
                             </button>
                         </form>
 
                         <div class="mt-8 text-center text-[11px] text-slate-500">
-                            ยฉ 2026 AIR-4 Auto Air Conditioning Service Center
+                            © 2026 AIR-4 Auto Air Conditioning Service Center
                         </div>
                     </div>
                 </div>
@@ -722,7 +722,7 @@
                                 <Air4Logo className="h-8" variant="white" />
                                 <div>
                                     <h3 class="text-lg font-bold text-white">{brand} {model} ({year})</h3>
-                                    <p class="text-xs text-slate-400">เน€เธฅเธเนเธกเธฅเน: {item.mileage ? `${item.mileage} เธเธก.` : 'เนเธกเนเธฃเธฐเธเธธ'}</p>
+                                    <p class="text-xs text-slate-400">เลขไมล์: {item.mileage ? `${item.mileage} กม.` : 'ไม่ระบุ'}</p>
                                 </div>
                             </div>
                             <button onClick={onClose} class="text-slate-400 hover:text-white text-xl">
@@ -735,7 +735,7 @@
                             <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
                                 <div class="flex items-center space-x-2">
                                     <i class="fa-solid fa-images text-blue-600"></i>
-                                    <h4 class="text-base font-bold text-slate-800">เธฃเธนเธเธ เธฒเธเธเธฅเธเธฒเธเธ—เธฑเนเธเธซเธกเธ” ({images.length})</h4>
+                                    <h4 class="text-base font-bold text-slate-800">รูปภาพผลงานทั้งหมด ({images.length})</h4>
                                 </div>
                                 <div class="text-xs text-slate-600 bg-slate-100 px-3 py-1 rounded-full font-medium">
                                     Low Side: {item.pressureLow ? `${item.pressureLow} PSI` : '-'} | High Side: {item.pressureHigh ? `${item.pressureHigh} PSI` : '-'}
@@ -745,7 +745,7 @@
                             {images.length === 0 ? (
                                 <div class="text-center py-16 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                     <i class="fa-regular fa-image text-4xl mb-2 block"></i>
-                                    <p class="text-sm font-medium">เนเธกเนเธกเธตเธฃเธนเธเธ เธฒเธเธชเธณเธซเธฃเธฑเธเน€เธเธชเธเธตเน</p>
+                                    <p class="text-sm font-medium">ไม่มีรูปภาพสำหรับเคสนี้</p>
                                 </div>
                             ) : (
                                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -776,7 +776,7 @@
                                 onClick={onClose}
                                 class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-4 py-2 rounded-lg text-sm transition"
                             >
-                                เธเธดเธ”เธซเธเนเธฒเธ•เนเธฒเธ
+                                ปิดหน้าต่าง
                             </button>
                         </div>
                     </div>
@@ -806,7 +806,7 @@
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if(!formData.brand || !formData.model) {
-                    alert('เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธขเธตเนเธซเนเธญเนเธฅเธฐเธฃเธธเนเธเธฃเธ–');
+                    alert('กรุณากรอกยี่ห้อและรุ่นรถ');
                     return;
                 }
 
@@ -833,7 +833,7 @@
                         <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
                             <h3 class="text-base font-bold flex items-center">
                                 <i class="fa-solid fa-car-rear mr-2 text-blue-400"></i>
-                                {isEdit ? 'เนเธเนเนเธเธเนเธญเธกเธนเธฅเน€เธเธชเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธ' : 'เน€เธเธดเนเธกเน€เธเธชเธเธฅเธเธฒเธเธฅเนเธฒเธเธเธญเธขเธฅเนเน€เธขเนเธเนเธซเธกเน'}
+                                {isEdit ? 'แก้ไขข้อมูลเคสล้างคอยล์เย็น' : 'เพิ่มเคสผลงานล้างคอยล์เย็นใหม่'}
                             </h3>
                             <button onClick={onClose} class="text-slate-400 hover:text-white">
                                 <i class="fa-solid fa-xmark"></i>
@@ -843,34 +843,34 @@
                         <form onSubmit={handleSubmit} class="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-sm">
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เธขเธตเนเธซเนเธญเธฃเธ– *</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">ยี่ห้อรถ *</label>
                                     <input 
                                         type="text" 
                                         required
                                         value={formData.brand}
                                         onChange={(e) => setFormData({...formData, brand: e.target.value})}
-                                        placeholder="เน€เธเนเธ Toyota, Honda" 
+                                        placeholder="เช่น Toyota, Honda" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เธฃเธธเนเธเธฃเธ– *</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">รุ่นรถ *</label>
                                     <input 
                                         type="text" 
                                         required
                                         value={formData.model}
                                         onChange={(e) => setFormData({...formData, model: e.target.value})}
-                                        placeholder="เน€เธเนเธ Camry, Civic" 
+                                        placeholder="เช่น Camry, Civic" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธตเธฃเธ– (เธ.เธจ.)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">ปีรถ (ค.ศ.)</label>
                                     <input 
                                         type="text" 
                                         value={formData.year}
                                         onChange={(e) => setFormData({...formData, year: e.target.value})}
-                                        placeholder="เน€เธเนเธ 2022" 
+                                        placeholder="เช่น 2022" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
@@ -878,39 +878,39 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เน€เธฅเธเนเธกเธฅเน (เธเธก.)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เลขไมล์ (กม.)</label>
                                     <input 
                                         type="text" 
                                         value={formData.mileage}
                                         onChange={(e) => setFormData({...formData, mileage: e.target.value})}
-                                        placeholder="เน€เธเนเธ 85,000" 
+                                        placeholder="เช่น 85,000" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เนเธฃเธเธ”เธฑเธ Low Side (PSI)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">แรงดัน Low Side (PSI)</label>
                                     <input 
                                         type="text" 
                                         value={formData.pressureLow}
                                         onChange={(e) => setFormData({...formData, pressureLow: e.target.value})}
-                                        placeholder="เน€เธเนเธ 32" 
+                                        placeholder="เช่น 32" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">เนเธฃเธเธ”เธฑเธ High Side (PSI)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">แรงดัน High Side (PSI)</label>
                                     <input 
                                         type="text" 
                                         value={formData.pressureHigh}
                                         onChange={(e) => setFormData({...formData, pressureHigh: e.target.value})}
-                                        placeholder="เน€เธเนเธ 185" 
+                                        placeholder="เช่น 185" 
                                         class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
                             </div>
 
                             <div class="border-t border-slate-200 pt-3">
-                                <label class="block font-semibold text-slate-800 text-xs mb-1">เธฃเธฒเธขเธเธฒเธฃ URL เธฃเธนเธเธ เธฒเธเธเธฅเธเธฒเธ (เนเธชเน 1 URL เธ•เนเธญ 1 เธเธฃเธฃเธ—เธฑเธ”)</label>
+                                <label class="block font-semibold text-slate-800 text-xs mb-1">รายการ URL รูปภาพผลงาน (ใส่ 1 URL ต่อ 1 บรรทัด)</label>
                                 <textarea 
                                     rows="5"
                                     value={imageUrlsText}
@@ -918,7 +918,7 @@
                                     placeholder="https://images.example.com/photo1.jpg&#10;https://images.example.com/photo2.jpg"
                                     class="w-full px-3 py-2 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"
                                 ></textarea>
-                                <span class="text-[11px] text-slate-500">เธฃเธฐเธเธเธเธฐเธชเธฃเนเธฒเธเธญเธฒเธฃเนเน€เธฃเธขเน images[] เธเธฃเนเธญเธกเธเธณเธซเธเธ”เธเนเธฒ type: "unknown" เนเธซเนเธญเธฑเธ•เนเธเธกเธฑเธ•เธด</span>
+                                <span class="text-[11px] text-slate-500">ระบบจะสร้างอาร์เรย์ images[] พร้อมกำหนดค่า type: "unknown" ให้อัตโนมัติ</span>
                             </div>
 
                             <div class="pt-4 flex justify-end space-x-3 border-t">
@@ -927,13 +927,13 @@
                                     onClick={onClose}
                                     class="px-4 py-2 border text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50"
                                 >
-                                    เธขเธเน€เธฅเธดเธ
+                                    ยกเลิก
                                 </button>
                                 <button 
                                     type="submit" 
                                     class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow"
                                 >
-                                    {isEdit ? 'เธเธฑเธเธ—เธถเธเธเธฒเธฃเนเธเนเนเธ' : 'เธเธฑเธเธ—เธถเธเน€เธเธชเนเธซเธกเน'}
+                                    {isEdit ? 'บันทึกการแก้ไข' : 'บันทึกเคสใหม่'}
                                 </button>
                             </div>
                         </form>
@@ -951,7 +951,7 @@
                         <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
                             <h3 class="text-base font-bold flex items-center">
                                 <i class="fa-solid fa-sliders mr-2 text-blue-400"></i>
-                                เธ•เธฑเนเธเธเนเธฒเธเนเธญเธเธงเธฒเธกเธฃเนเธฒเธเธเนเธฒ
+                                ตั้งค่าข้อความร้านค้า
                             </h3>
                             <button onClick={onClose} class="text-slate-400 hover:text-white">
                                 <i class="fa-solid fa-xmark"></i>
@@ -960,7 +960,7 @@
 
                         <form onSubmit={(e) => { e.preventDefault(); onSave(data); }} class="p-6 space-y-4 text-sm">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธทเนเธญเธจเธนเธเธขเนเธเธฃเธดเธเธฒเธฃ</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อศูนย์บริการ</label>
                                 <input 
                                     type="text" 
                                     value={data.name}
@@ -969,7 +969,7 @@
                                 />
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">เธชเนเธฅเนเธเธเธขเนเธญ</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">สโลแกนย่อ</label>
                                 <input 
                                     type="text" 
                                     value={data.slogan}
@@ -978,7 +978,7 @@
                                 />
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธฒเธ”เธซเธฑเธงเนเธเธเน€เธเธญเธฃเนเธซเธฅเธฑเธ (Hero Title)</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">พาดหัวแบนเนอร์หลัก (Hero Title)</label>
                                 <input 
                                     type="text" 
                                     value={data.heroTitle}
@@ -987,7 +987,7 @@
                                 />
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">เธเธณเธญเธเธดเธเธฒเธขเนเธ•เนเธเธฒเธ”เธซเธฑเธง</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">คำอธิบายใต้พาดหัว</label>
                                 <textarea 
                                     rows="2"
                                     value={data.heroSub}
@@ -1002,13 +1002,13 @@
                                     onClick={onClose}
                                     class="px-4 py-2 border text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50"
                                 >
-                                    เธขเธเน€เธฅเธดเธ
+                                    ยกเลิก
                                 </button>
                                 <button 
                                     type="submit" 
                                     class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow"
                                 >
-                                    เธเธฑเธเธ—เธถเธเธเนเธญเธเธงเธฒเธก
+                                    บันทึกข้อความ
                                 </button>
                             </div>
                         </form>
@@ -1023,8 +1023,8 @@
                     <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-100 p-6 text-center">
                         <div class="mb-4">
                             <Air4Logo className="h-12 mx-auto" variant="blue" />
-                            <h3 class="text-xl font-bold text-slate-800 mt-2">เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเนเธเนเธเธฒเธ</h3>
-                            <p class="text-xs text-slate-500 mt-1">เน€เธฅเธทเธญเธเธเธฃเธฐเน€เธ เธ—เธเธฒเธฃเน€เธเนเธฒเนเธเนเธเธฒเธเน€เธเธทเนเธญเธ—เธ”เธชเธญเธเธฃเธฐเธเธ</p>
+                            <h3 class="text-xl font-bold text-slate-800 mt-2">เข้าสู่ระบบใช้งาน</h3>
+                            <p class="text-xs text-slate-500 mt-1">เลือกประเภทการเข้าใช้งานเพื่อทดสอบระบบ</p>
                         </div>
 
                         <div class="space-y-3 my-6">
@@ -1033,7 +1033,7 @@
                                 class="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm shadow-md transition flex items-center justify-center space-x-2"
                             >
                                 <i class="fa-solid fa-user-shield text-amber-400"></i>
-                                <span>เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธเน€เธเนเธ เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ (Admin)</span>
+                                <span>เข้าสู่ระบบเป็น ผู้ดูแลระบบ (Admin)</span>
                             </button>
                             
                             <button 
@@ -1041,7 +1041,7 @@
                                 class="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-xl text-sm transition flex items-center justify-center space-x-2 border border-slate-200"
                             >
                                 <i class="fa-solid fa-eye text-blue-600"></i>
-                                <span>เน€เธเนเธฒเธเธกเธฃเธฐเธเธเนเธเธเธฒเธเธฐ เธฅเธนเธเธเนเธฒ / เธเธนเนเน€เธขเธตเนเธขเธกเธเธก</span>
+                                <span>เข้าชมระบบในฐานะ ลูกค้า / ผู้เยี่ยมชม</span>
                             </button>
                         </div>
 
@@ -1049,7 +1049,7 @@
                             onClick={onClose}
                             class="text-xs text-slate-400 hover:text-slate-600 underline"
                         >
-                            เธเธดเธ”เธซเธเนเธฒเธ•เนเธฒเธ
+                            ปิดหน้าต่าง
                         </button>
                     </div>
                 </div>
