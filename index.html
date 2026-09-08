@@ -227,14 +227,18 @@
             `;
         }
 
-        function showToast(message) {
+        function showToast(message, type = 'success') {
             const container = document.getElementById('toast-root');
             if(!container) return;
-            
+
+            const isError = type === 'error';
+            const icon = isError ? 'fa-circle-xmark' : 'fa-circle-check';
+            const iconColor = isError ? 'text-red-400' : 'text-green-400';
+
             const toastEl = document.createElement('div');
             toastEl.className = "fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl z-50 flex items-center space-x-2 border border-slate-700 animate-fade-in";
             toastEl.innerHTML = `
-                <i class="fa-solid fa-circle-check text-green-400"></i>
+                <i class="fa-solid ${icon} ${iconColor}"></i>
                 <span class="text-sm font-medium">${message}</span>
             `;
             container.appendChild(toastEl);
@@ -1204,7 +1208,7 @@
 
             } catch (err) {
                 console.error('Login error:', err);
-                showToast(err.message || 'ไม่สามารถเข้าสู่ระบบได้');
+                showToast(err.message || 'ไม่สามารถเข้าสู่ระบบได้', 'error');
 
             } finally {
                 if (submitButton) {
@@ -1234,7 +1238,22 @@
         function handleSearchInput(val) {
             state.searchKeyword = val;
             state.currentPage = 1;
+
+            // renderApp() rebuilds the search input, which normally causes the
+            // browser to lose focus after every keystroke. Restore focus and
+            // caret position immediately after rendering so typing can continue.
+            const cursorPosition = val.length;
             renderApp();
+
+            requestAnimationFrame(() => {
+                const input = document.querySelector('input[oninput="handleSearchInput(this.value)"]');
+                if (input) {
+                    input.focus();
+                    try {
+                        input.setSelectionRange(cursorPosition, cursorPosition);
+                    } catch (_) {}
+                }
+            });
         }
 
         function handleBrandChange(val) {
