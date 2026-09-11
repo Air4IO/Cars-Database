@@ -1910,8 +1910,8 @@ def _download_drive_image(
         )
 
 
-@app.get(
-    "/image-by-path"
+@app.api_route(
+    "/image-by-path", methods=["GET", "HEAD"]
 )
 def get_image_by_path(
     path: str,
