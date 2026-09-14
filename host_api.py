@@ -22,7 +22,7 @@ from googleapiclient.http import MediaIoBaseDownload
 
 from fastapi import FastAPI, HTTPException, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 
 
@@ -1090,6 +1090,10 @@ def build_cases():
 
 _index_lock = threading.Lock()
 
+# Prevent many simultaneous image requests from downloading the same
+# master drive_path_index.json from Google Drive after a Render restart.
+_drive_index_restore_lock = threading.Lock()
+
 
 def list_drive_children(
     folder_id
@@ -1461,19 +1465,28 @@ def ensure_drive_index():
     if index:
         return index
 
-    # 2. If deployment has no local copy, restore it from the private
-    #    Google Drive master copy.
-    if download_drive_index_from_google_drive():
+    # 2. Only ONE request is allowed to restore the master index.
+    #    Other simultaneous image requests wait for that same restore
+    #    instead of starting their own Google Drive download.
+    with _drive_index_restore_lock:
+
+        # Double-check after waiting for the lock.
         load_drive_path_index.cache_clear()
         index = load_drive_path_index()
         if index:
             return index
 
-    # 3. Last resort: build a new index by scanning the Drive tree.
-    #    This keeps the API recoverable even if the master index is unavailable.
-    index = build_drive_path_index()
-    load_drive_path_index.cache_clear()
-    return index
+        if download_drive_index_from_google_drive():
+            load_drive_path_index.cache_clear()
+            index = load_drive_path_index()
+            if index:
+                return index
+
+        # 3. Last resort: build a new index by scanning the Drive tree.
+        #    This keeps the API recoverable if the master index is unavailable.
+        index = build_drive_path_index()
+        load_drive_path_index.cache_clear()
+        return index
 
 
 # ============================================================
@@ -1910,37 +1923,87 @@ def _download_drive_image(
         )
 
 
-@app.api_route(
-    "/image-by-path", methods=["GET", "HEAD"]
-)
+def _validate_image_request_token(
+    authorization: str | None,
+    token: str | None,
+):
+    # Image delivery only needs to verify that the token is valid.
+    # It does NOT need to read Google Sheets again for every image.
+    access_token = _get_token_from_request(
+        authorization,
+        token,
+    )
+    return decode_access_token(access_token)
+
+
+@app.head("/image-by-path")
+def head_image_by_path(
+    path: str,
+    authorization: str | None = Header(default=None),
+    token: str | None = Query(default=None),
+):
+    # IMPORTANT:
+    # HEAD must be fast. Do not download the image and do not open
+    # Google Sheets here. The browser/client uses HEAD only to check
+    # whether the resource is available.
+    _validate_image_request_token(
+        authorization,
+        token,
+    )
+
+    file_info = find_drive_file(path)
+
+    if not file_info:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "ไม่พบรูปใน drive_path_index.json "
+                f"จาก path: {path}"
+            ),
+        )
+
+    headers = {
+        "Cache-Control": "public, max-age=86400",
+    }
+
+    mime_type = file_info.get("mimeType") or "image/jpeg"
+    headers["Content-Type"] = mime_type
+
+    cache_file = _cache_path(file_info["id"])
+    if _valid_cached_file(cache_file):
+        headers["Content-Length"] = str(cache_file.stat().st_size)
+
+    return Response(
+        status_code=200,
+        headers=headers,
+    )
+
+
+@app.get("/image-by-path")
 def get_image_by_path(
     path: str,
     authorization: str | None = Header(default=None),
     token: str | None = Query(default=None),
 ):
 
-    current_user(authorization=authorization, token=token)
+    _validate_image_request_token(
+        authorization,
+        token,
+    )
 
     # --------------------------------------------------------
     # ใช้ drive_path_index.json โดยตรง
     # ไม่ search filename ใน Google Drive
     # --------------------------------------------------------
 
-    file_info = (
-        find_drive_file(
-            path
-        )
-    )
+    file_info = find_drive_file(path)
 
     if not file_info:
-
         raise HTTPException(
             status_code=404,
             detail=(
-                "ไม่พบรูปใน "
-                "drive_path_index.json "
-                "จาก path: "
-                f"{path}"
+                "ไม่พบรูปใน drive_path_index.json "
+                f"จาก path: {path}"
             ),
         )
 
