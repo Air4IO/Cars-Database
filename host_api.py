@@ -301,6 +301,16 @@ DRIVE_INDEX_FILE = Path(
     )
 )
 
+# Production image index.
+# This small index contains only the images listed in the production CSV,
+# so Render never needs to download the large master Drive index.
+SMALL_IMAGE_INDEX_FILE = Path(
+    os.getenv(
+        "SMALL_IMAGE_INDEX_FILE",
+        str(BASE_DIR / "small_image_index.json"),
+    )
+)
+
 # Master copy of the Drive index stored privately in Google Drive.
 # Local development will still use the local drive_path_index.json when it exists.
 # On Render/another ephemeral host, the API downloads this file automatically
@@ -507,7 +517,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
@@ -1090,10 +1100,6 @@ def build_cases():
 
 _index_lock = threading.Lock()
 
-# Prevent many simultaneous image requests from downloading the same
-# master drive_path_index.json from Google Drive after a Render restart.
-_drive_index_restore_lock = threading.Lock()
-
 
 def list_drive_children(
     folder_id
@@ -1349,144 +1355,48 @@ def build_drive_path_index(
 
 
 @lru_cache(maxsize=1)
-def load_drive_path_index():
+def load_small_image_index():
+    """
+    Load the small production image index from the local repository.
 
-    if not DRIVE_INDEX_FILE.exists():
+    The file contains only the images listed in the production CSV
+    (currently 1,366 image rows), so loading it is fast and does not
+    require any Google Drive index download.
+    """
+
+    if not SMALL_IMAGE_INDEX_FILE.exists():
+        print(
+            "[Small Index] ERROR: ไม่พบไฟล์: "
+            f"{SMALL_IMAGE_INDEX_FILE}"
+        )
         return {}
 
     try:
-
         data = json.loads(
-            DRIVE_INDEX_FILE.read_text(
+            SMALL_IMAGE_INDEX_FILE.read_text(
                 encoding="utf-8"
             )
         )
 
-        if isinstance(
-            data,
-            dict,
-        ):
-
-            return data
-
-    except Exception as e:
-
-        print(
-            "[Drive Index] "
-            f"โหลดไม่ได้: {e}"
-        )
-
-    return {}
-
-
-def download_drive_index_from_google_drive(force=False):
-
-    """
-    Download the master drive_path_index.json from Google Drive.
-
-    This is used when the deployment filesystem does not contain a local
-    index (for example after a Render Free instance restart). The downloaded
-    copy is only a local cache; Google Drive remains the source of truth.
-    """
-
-    if not DRIVE_INDEX_FILE_ID:
-        return False
-
-    if DRIVE_INDEX_FILE.exists() and not force:
-        return True
-
-    DRIVE_INDEX_FILE.parent.mkdir(parents=True, exist_ok=True)
-    temp_file = DRIVE_INDEX_FILE.with_suffix(DRIVE_INDEX_FILE.suffix + ".tmp")
-
-    print(
-        "[Drive Index] Download master index from Google Drive: "
-        f"{DRIVE_INDEX_FILE_ID}"
-    )
-
-    try:
-        drive = get_drive()
-
-        metadata = drive.files().get(
-            fileId=DRIVE_INDEX_FILE_ID,
-            fields="id,name,mimeType,size",
-            supportsAllDrives=True,
-        ).execute()
-
-        if str(metadata.get("mimeType", "")) != "application/json":
-            raise RuntimeError(
-                "drive_path_index file on Google Drive is not JSON: "
-                f"{metadata.get('mimeType')}"
+        if not isinstance(data, dict):
+            raise ValueError(
+                "small_image_index.json ต้องเป็น JSON object"
             )
 
-        request = drive.files().get_media(
-            fileId=DRIVE_INDEX_FILE_ID,
-            supportsAllDrives=True,
-        )
-
-        with open(temp_file, "wb") as fh:
-            downloader = MediaIoBaseDownload(fh, request, chunksize=1024 * 1024)
-            done = False
-            while not done:
-                _, done = downloader.next_chunk()
-
-        # Validate before replacing the active index.
-        with open(temp_file, "r", encoding="utf-8") as fh:
-            data = json.load(fh)
-
-        if not isinstance(data, dict) or not data:
-            raise RuntimeError("Downloaded Drive index is empty or invalid")
-
-        temp_file.replace(DRIVE_INDEX_FILE)
-
         print(
-            "[Drive Index] Downloaded successfully: "
-            f"{len(data):,} files"
+            "[Small Index] Loaded: "
+            f"{len(data):,} files | "
+            f"{SMALL_IMAGE_INDEX_FILE.name}"
         )
-        return True
+
+        return data
 
     except Exception as e:
-        try:
-            if temp_file.exists():
-                temp_file.unlink()
-        except Exception:
-            pass
-
         print(
-            "[Drive Index] Download failed: "
+            "[Small Index] โหลดไม่ได้: "
             f"{e}"
         )
-        return False
-
-
-def ensure_drive_index():
-
-    # 1. Prefer a local cached copy.
-    index = load_drive_path_index()
-    if index:
-        return index
-
-    # 2. Only ONE request is allowed to restore the master index.
-    #    Other simultaneous image requests wait for that same restore
-    #    instead of starting their own Google Drive download.
-    with _drive_index_restore_lock:
-
-        # Double-check after waiting for the lock.
-        load_drive_path_index.cache_clear()
-        index = load_drive_path_index()
-        if index:
-            return index
-
-        if download_drive_index_from_google_drive():
-            load_drive_path_index.cache_clear()
-            index = load_drive_path_index()
-            if index:
-                return index
-
-        # 3. Last resort: build a new index by scanning the Drive tree.
-        #    This keeps the API recoverable if the master index is unavailable.
-        index = build_drive_path_index()
-        load_drive_path_index.cache_clear()
-        return index
+        return {}
 
 
 # ============================================================
@@ -1508,9 +1418,10 @@ def find_drive_file(
     if not csv_path:
         return None
 
-    index = (
-        ensure_drive_index()
-    )
+    index = load_small_image_index()
+
+    if not index:
+        return None
 
     # --------------------------------------------------------
     # 1. Exact full path
@@ -1547,28 +1458,14 @@ def find_drive_file(
                 file_info
             )
 
-            if (
-                len(
-                    suffix_matches
-                )
-                > 1
-            ):
-
+            if len(suffix_matches) > 1:
                 break
 
-    if (
-        len(
-            suffix_matches
-        )
-        == 1
-    ):
-
+    if len(suffix_matches) == 1:
         return suffix_matches[0]
 
     # --------------------------------------------------------
     # 3. Filename fallback
-    #
-    # ใช้เฉพาะกรณี filename unique
     # --------------------------------------------------------
 
     filename = (
@@ -1593,22 +1490,10 @@ def find_drive_file(
                 file_info
             )
 
-            if (
-                len(
-                    filename_matches
-                )
-                > 1
-            ):
-
+            if len(filename_matches) > 1:
                 break
 
-    if (
-        len(
-            filename_matches
-        )
-        == 1
-    ):
-
+    if len(filename_matches) == 1:
         return filename_matches[0]
 
     return None
@@ -1650,12 +1535,11 @@ def _guess_extension(mime_type):
 def _find_index_file_by_id(file_id):
     """
     ใช้เฉพาะ /image/{file_id} โดยตรง
-    ปกติ /image-by-path จะมี file_info จาก index อยู่แล้ว
+    ค้นจาก small production index เท่านั้น
     """
-    index = ensure_drive_index()
+    index = load_small_image_index()
 
     for info in index.values():
-
         if info.get("id") == file_id:
             return info
 
@@ -1927,8 +1811,12 @@ def _validate_image_request_token(
     authorization: str | None,
     token: str | None,
 ):
-    # Image delivery only needs to verify that the token is valid.
-    # It does NOT need to read Google Sheets again for every image.
+    """
+    Validate the signed token only.
+
+    Image requests do not re-read Google Sheets. This keeps image loading
+    fast and avoids one Google Sheets request for every image.
+    """
     access_token = _get_token_from_request(
         authorization,
         token,
@@ -1936,16 +1824,18 @@ def _validate_image_request_token(
     return decode_access_token(access_token)
 
 
-@app.head("/image-by-path")
+@app.head(
+    "/image-by-path"
+)
 def head_image_by_path(
     path: str,
     authorization: str | None = Header(default=None),
     token: str | None = Query(default=None),
 ):
-    # IMPORTANT:
-    # HEAD must be fast. Do not download the image and do not open
-    # Google Sheets here. The browser/client uses HEAD only to check
-    # whether the resource is available.
+    """
+    HEAD must never download the image.
+    Browser/proxy health checks can therefore complete immediately.
+    """
     _validate_image_request_token(
         authorization,
         token,
@@ -1957,44 +1847,36 @@ def head_image_by_path(
         raise HTTPException(
             status_code=404,
             detail=(
-                "ไม่พบรูปใน drive_path_index.json "
+                "ไม่พบรูปใน small_image_index.json "
                 f"จาก path: {path}"
             ),
         )
 
-    headers = {
-        "Cache-Control": "public, max-age=86400",
-    }
-
-    mime_type = file_info.get("mimeType") or "image/jpeg"
-    headers["Content-Type"] = mime_type
-
-    cache_file = _cache_path(file_info["id"])
-    if _valid_cached_file(cache_file):
-        headers["Content-Length"] = str(cache_file.stat().st_size)
+    mime_type = (
+        file_info.get("mimeType")
+        or "image/jpeg"
+    )
 
     return Response(
         status_code=200,
-        headers=headers,
+        headers={
+            "Content-Type": mime_type,
+        },
     )
 
 
-@app.get("/image-by-path")
+@app.get(
+    "/image-by-path"
+)
 def get_image_by_path(
     path: str,
     authorization: str | None = Header(default=None),
     token: str | None = Query(default=None),
 ):
-
     _validate_image_request_token(
         authorization,
         token,
     )
-
-    # --------------------------------------------------------
-    # ใช้ drive_path_index.json โดยตรง
-    # ไม่ search filename ใน Google Drive
-    # --------------------------------------------------------
 
     file_info = find_drive_file(path)
 
@@ -2002,7 +1884,7 @@ def get_image_by_path(
         raise HTTPException(
             status_code=404,
             detail=(
-                "ไม่พบรูปใน drive_path_index.json "
+                "ไม่พบรูปใน small_image_index.json "
                 f"จาก path: {path}"
             ),
         )
@@ -2123,8 +2005,33 @@ def get_image(
     )
 
 # ============================================================
+# STARTUP VALIDATION
+# ============================================================
+
+@app.on_event("startup")
+def validate_small_index_on_startup():
+    index = load_small_image_index()
+
+    if not index:
+        print(
+            "[Small Index] WARNING: "
+            "small_image_index.json is missing or empty."
+        )
+    else:
+        print(
+            "[Small Index] READY: "
+            f"{len(index):,} production images"
+        )
+
+
+# ============================================================
 # ROOT
 # ============================================================
+
+@app.head("/")
+def root_head():
+    return Response(status_code=200)
+
 
 @app.get("/")
 def root():
@@ -2252,65 +2159,35 @@ def drive_index_status(
     authorization: str | None = Header(default=None),
 ):
 
-    user = current_user(authorization=authorization, token=None)
+    user = current_user(
+        authorization=authorization,
+        token=None,
+    )
     require_admin(user)
 
-    if not DRIVE_INDEX_FILE.exists():
-
+    if not SMALL_IMAGE_INDEX_FILE.exists():
         return {
-
-            "ready":
-                False,
-
-            "files":
-                0,
-
-            "index_file":
-                str(
-                    DRIVE_INDEX_FILE
-                ),
-
-            "master_index_file_id":
-                DRIVE_INDEX_FILE_ID,
+            "ready": False,
+            "files": 0,
+            "index_file": str(SMALL_IMAGE_INDEX_FILE),
+            "type": "small_production_index",
         }
 
     try:
-
-        index = json.loads(
-            DRIVE_INDEX_FILE.read_text(
-                encoding="utf-8"
-            )
-        )
+        index = load_small_image_index()
 
         return {
-
-            "ready":
-                True,
-
-            "files":
-                len(index),
-
-            "index_file":
-                str(
-                    DRIVE_INDEX_FILE
-                ),
-
-            "master_index_file_id":
-                DRIVE_INDEX_FILE_ID,
+            "ready": bool(index),
+            "files": len(index),
+            "index_file": str(SMALL_IMAGE_INDEX_FILE),
+            "type": "small_production_index",
         }
 
     except Exception as e:
-
         return {
-
-            "ready":
-                False,
-
-            "files":
-                0,
-
-            "error":
-                str(e),
+            "ready": False,
+            "files": 0,
+            "error": str(e),
         }
 
 
@@ -2325,35 +2202,24 @@ def build_drive_index_api(
     authorization: str | None = Header(default=None),
 ):
 
-    user = current_user(authorization=authorization, token=None)
+    user = current_user(
+        authorization=authorization,
+        token=None,
+    )
     require_admin(user)
 
-    result = (
-        build_drive_path_index(
-            force=True
-        )
+    # The production deployment no longer builds/scans the large
+    # Drive index. small_image_index.json is generated offline and
+    # committed to the repository.
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "Deprecated: production now uses "
+            "small_image_index.json. "
+            "Generate/update the small index offline "
+            "and deploy it with the repository."
+        ),
     )
-
-    load_drive_path_index.cache_clear()
-
-    find_drive_file.cache_clear()
-
-    return {
-
-        "status":
-            "built",
-
-        "files":
-            len(result),
-
-        "index_file":
-            str(
-                DRIVE_INDEX_FILE
-            ),
-
-        "master_index_file_id":
-            DRIVE_INDEX_FILE_ID,
-    }
 
 
 # ============================================================
@@ -2422,7 +2288,7 @@ def drive_check(
 
         "index_file":
             str(
-                DRIVE_INDEX_FILE
+                SMALL_IMAGE_INDEX_FILE
             ),
     }
 
@@ -2461,6 +2327,20 @@ def login(request: LoginRequest):
             "allowed_brands": user["allowed_brands"],
         },
     }
+
+
+# ============================================================
+# CURRENT USER
+# ============================================================
+
+@app.get("/me")
+def me(
+    authorization: str | None = Header(default=None),
+):
+    return current_user(
+        authorization=authorization,
+        token=None,
+    )
 
 
 # ============================================================
