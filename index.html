@@ -667,7 +667,7 @@
                                         </span>
 
                                         <div class="flex items-center space-x-2">
-                                            ${state.currentUser?.role === 'admin' ? `
+                                            ${state.currentUser?.role === 'admin' && item.source === 'web' ? `
                                                 <button 
                                                     onclick="openModal('addEdit', '${caseId}')"
                                                     class="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition"
@@ -1131,6 +1131,7 @@
                                 </button>
                                 <button 
                                     onclick="executeDeleteCase()" 
+                                    data-delete-confirm="1"
                                     class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium shadow"
                                 >
                                     ลบข้อมูล
@@ -1373,12 +1374,69 @@
             renderApp();
         }
 
-        function executeDeleteCase() {
-            if (state.deleteTargetId) {
-                state.cases = state.cases.filter(c => getCaseId(c) !== state.deleteTargetId);
-                showToast('ลบข้อมูลเคสเรียบร้อยแล้ว');
+        async function executeDeleteCase() {
+            const caseId = state.deleteTargetId;
+            if (!caseId) {
+                closeModal();
+                return;
             }
-            closeModal();
+
+            const token = getAccessToken();
+            if (!token) {
+                closeModal();
+                showToast('ไม่พบ Session กรุณาเข้าสู่ระบบใหม่');
+                return;
+            }
+
+            const targetCase = state.cases.find(c => getCaseId(c) === caseId);
+            if (!targetCase || targetCase.source !== 'web') {
+                closeModal();
+                showToast('ไม่อนุญาตให้ลบเคสเดิมจากระบบ');
+                return;
+            }
+
+            const buttons = document.querySelectorAll('[data-delete-confirm]');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.textContent = 'กำลังลบ...';
+                btn.classList.add('opacity-60', 'cursor-not-allowed');
+            });
+
+            try {
+                const response = await fetch(API_BASE + '/cases/' + encodeURIComponent(caseId), {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                let result = null;
+                try { result = await response.json(); } catch (_) {}
+
+                if (response.status === 401) {
+                    localStorage.removeItem(ACCESS_TOKEN_KEY);
+                    localStorage.removeItem(USER_KEY);
+                    state.currentUser = null;
+                    state.cases = [];
+                    closeModal();
+                    renderApp();
+                    showToast('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(result?.detail || `Server responded with ${response.status}`);
+                }
+
+                closeModal();
+                showToast('ลบเคสและรูปภาพออกจากระบบเรียบร้อยแล้ว');
+                await fetchCasesData();
+
+            } catch (err) {
+                console.error('Delete case error:', err);
+                showToast(err.message || 'ไม่สามารถลบเคสได้');
+                closeModal();
+            }
         }
 
         async function handleSaveCaseForm(e) {

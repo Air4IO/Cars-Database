@@ -2975,6 +2975,151 @@ def create_case(
         )
 
 
+
+# ============================================================
+# DELETE WEB-CREATED CASE
+# ============================================================
+
+def _find_case_row_in_sheet(case_id: str):
+    """Return (worksheet, row_number, parsed_case) for a web-created case."""
+    ws = _get_cases_worksheet()
+    rows = ws.get_all_records()
+    target = str(case_id or "").strip().upper()
+
+    for idx, row in enumerate(rows, start=2):  # row 1 is the header
+        row_case_id = str(row.get("case_id", "")).strip().upper()
+        if row_case_id != target:
+            continue
+
+        try:
+            images = json.loads(row.get("images_json", "[]") or "[]")
+        except Exception:
+            images = []
+
+        case = {
+            "case_id": row_case_id,
+            "case_folder": str(row.get("case_folder", "")).strip(),
+            "images": images if isinstance(images, list) else [],
+        }
+        return ws, idx, case
+
+    return None, None, None
+
+
+def _trash_drive_file(file_id: str):
+    if not file_id:
+        return
+    execute_with_retry(
+        get_drive().files().update(
+            fileId=file_id,
+            body={"trashed": True},
+            fields="id,trashed",
+            supportsAllDrives=True,
+        )
+    ).execute()
+
+
+def _delete_web_case_from_sheet(ws, row_number: int):
+    # Delete the exact row that was found above.
+    ws.delete_rows(row_number)
+
+
+@app.delete("/cases/{case_id}")
+def delete_case(
+    case_id: str,
+    authorization: str | None = Header(default=None),
+):
+    user = current_user(authorization=authorization, token=None)
+    require_admin(user)
+
+    target = str(case_id or "").strip().upper()
+    if not target:
+        raise HTTPException(status_code=400, detail="Case ID ไม่ถูกต้อง")
+
+    # IMPORTANT: cases from the frozen production CSV can never be deleted
+    # through this endpoint. Only cases created from the web are deletable.
+    if target in build_cases():
+        raise HTTPException(
+            status_code=403,
+            detail="ไม่อนุญาตให้ลบเคสเดิมจาก CSV",
+        )
+
+    ws, row_number, case = _find_case_row_in_sheet(target)
+    if not case:
+        raise HTTPException(
+            status_code=404,
+            detail=f"ไม่พบ Web Case {target}",
+        )
+
+    image_entries = case.get("images", []) or []
+    deleted_files = 0
+
+    try:
+        # 1. Remove uploaded image files from Google Drive.
+        # The files are trashed rather than permanently destroyed so they
+        # remain recoverable from Drive trash if a test case is deleted by mistake.
+        for image in image_entries:
+            file_id = str(image.get("id", "")).strip()
+            if file_id:
+                _trash_drive_file(file_id)
+                deleted_files += 1
+
+        # 2. Remove the case folder itself when we know its Drive ID.
+        # The folder ID is not stored separately, so locate it from the
+        # known path under AIR4 Web Cases. This avoids touching unrelated folders.
+        folder_path = case.get("case_folder", "")
+        if folder_path:
+            parts = [x for x in str(folder_path).replace("\\", "/").split("/") if x]
+            parent_id = DRIVE_ROOT_FOLDER_ID
+            current = None
+            for part in parts:
+                current = _find_drive_file_by_name(parent_id, part)
+                if not current:
+                    break
+                parent_id = current["id"]
+
+            if current and current.get("mimeType") == "application/vnd.google-apps.folder":
+                _trash_drive_file(current["id"])
+
+        # 3. Remove those image paths from the mutable live index.
+        with _small_live_index_lock:
+            live_index = _load_live_small_index()
+            image_paths = {
+                norm_path(str(img.get("path", "")))
+                for img in image_entries
+                if img.get("path")
+            }
+            for path in image_paths:
+                live_index.pop(path, None)
+            _save_live_small_index()
+
+        # 4. Remove the case record from Google Sheets.
+        _delete_web_case_from_sheet(ws, row_number)
+
+        # Clear cached path lookups so deleted images cannot be returned by a
+        # stale lru_cache entry in this Render instance.
+        find_drive_file.cache_clear()
+
+        print(
+            f"[Delete Case] DONE: {target} | files={deleted_files} | user={user['username']}"
+        )
+
+        return {
+            "ok": True,
+            "message": f"ลบเคส {target} เรียบร้อยแล้ว",
+            "case_id": target,
+            "deleted_files": deleted_files,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Delete Case] ERROR {target}: {type(e).__name__}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"ลบเคสไม่สำเร็จ: {e}",
+        )
+
 # ============================================================
 # CASE LIST
 # ============================================================
