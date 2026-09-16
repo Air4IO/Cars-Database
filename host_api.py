@@ -12,15 +12,16 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from io import BytesIO
 from urllib.parse import quote
+from tempfile import SpooledTemporaryFile
 
 import pandas as pd
 import gspread
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
-from fastapi import FastAPI, HTTPException, Header, Query
+from fastapi import FastAPI, HTTPException, Header, Query, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
@@ -87,6 +88,119 @@ def _get_users_worksheet():
         gc = gspread.authorize(credentials)
         _users_sheet = gc.open_by_key(GOOGLE_SHEET_ID).worksheet(GOOGLE_USERS_TAB)
         return _users_sheet
+
+
+_cases_sheet_lock = threading.RLock()
+_cases_sheet = None
+
+
+def _get_cases_worksheet():
+    global _cases_sheet
+    with _cases_sheet_lock:
+        if _cases_sheet is not None:
+            return _cases_sheet
+
+        if not Path(SERVICE_ACCOUNT_FILE).exists():
+            raise RuntimeError(
+                f"Google service account file not found: {SERVICE_ACCOUNT_FILE}"
+            )
+
+        credentials = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE,
+            scopes=[
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive",
+            ],
+        )
+        gc = gspread.authorize(credentials)
+        spreadsheet = gc.open_by_key(GOOGLE_SHEET_ID)
+
+        try:
+            ws = spreadsheet.worksheet(GOOGLE_CASES_TAB)
+        except gspread.WorksheetNotFound:
+            ws = spreadsheet.add_worksheet(
+                title=GOOGLE_CASES_TAB,
+                rows=1000,
+                cols=len(NEW_CASES_SHEET_HEADERS),
+            )
+            ws.append_row(
+                NEW_CASES_SHEET_HEADERS,
+                value_input_option="RAW",
+            )
+
+        headers = [str(x).strip() for x in ws.row_values(1)]
+        if headers != NEW_CASES_SHEET_HEADERS:
+            if not headers:
+                ws.append_row(
+                    NEW_CASES_SHEET_HEADERS,
+                    value_input_option="RAW",
+                )
+            else:
+                raise RuntimeError(
+                    f"Google Sheet tab '{GOOGLE_CASES_TAB}' header ไม่ตรงกับระบบ"
+                )
+
+        _cases_sheet = ws
+        return ws
+
+
+def _load_new_cases():
+    ws = _get_cases_worksheet()
+    rows = ws.get_all_records()
+    output = []
+
+    for row in rows:
+        case_id = str(row.get("case_id", "")).strip()
+        if not case_id:
+            continue
+
+        try:
+            images = json.loads(row.get("images_json", "[]") or "[]")
+        except Exception:
+            images = []
+
+        output.append({
+            "case_id": case_id,
+            "customer": str(row.get("customer", "")).strip() or None,
+            "brand": str(row.get("brand", "")).strip() or None,
+            "model": str(row.get("model", "")).strip() or None,
+            "year": str(row.get("year", "")).strip() or None,
+            "mileage": str(row.get("mileage", "")).strip() or None,
+            "low_before": str(row.get("low_before", "")).strip() or None,
+            "low_after": str(row.get("low_after", "")).strip() or None,
+            "high_before": str(row.get("high_before", "")).strip() or None,
+            "high_after": str(row.get("high_after", "")).strip() or None,
+            "date": str(row.get("date", "")).strip() or None,
+            "case_folder": str(row.get("case_folder", "")).strip() or None,
+            "images": images if isinstance(images, list) else [],
+            "source": "google_sheet",
+        })
+
+    return output
+
+
+def _append_new_case_to_sheet(case_data: dict):
+    ws = _get_cases_worksheet()
+    ws.append_row(
+        [
+            case_data.get("case_id", ""),
+            case_data.get("customer", ""),
+            case_data.get("brand", ""),
+            case_data.get("model", ""),
+            case_data.get("year", ""),
+            case_data.get("mileage", ""),
+            case_data.get("low_before", ""),
+            case_data.get("low_after", ""),
+            case_data.get("high_before", ""),
+            case_data.get("high_after", ""),
+            case_data.get("date", ""),
+            case_data.get("case_folder", ""),
+            json.dumps(case_data.get("images", []), ensure_ascii=False),
+            datetime.now().isoformat(timespec="seconds"),
+            case_data.get("created_by", ""),
+        ],
+        value_input_option="RAW",
+    )
 
 
 def _load_users(force=False):
@@ -311,6 +425,39 @@ SMALL_IMAGE_INDEX_FILE = Path(
     )
 )
 
+# Mutable production index stored in Google Drive.
+# The repository copy remains the seed/fallback; this Drive copy is updated
+# whenever a new case is added.
+SMALL_IMAGE_INDEX_DRIVE_FILE_ID = os.getenv(
+    "SMALL_IMAGE_INDEX_DRIVE_FILE_ID",
+    "",
+).strip()
+SMALL_IMAGE_INDEX_DRIVE_FILENAME = os.getenv(
+    "SMALL_IMAGE_INDEX_DRIVE_FILENAME",
+    "small_image_index_live.json",
+).strip()
+
+# Google Sheet tab used for cases created from the web.
+GOOGLE_CASES_TAB = os.getenv("GOOGLE_CASES_TAB", "Cases").strip()
+
+NEW_CASES_SHEET_HEADERS = [
+    "case_id",
+    "customer",
+    "brand",
+    "model",
+    "year",
+    "mileage",
+    "low_before",
+    "low_after",
+    "high_before",
+    "high_after",
+    "date",
+    "case_folder",
+    "images_json",
+    "created_at",
+    "created_by",
+]
+
 # Master copy of the Drive index stored privately in Google Drive.
 # Local development will still use the local drive_path_index.json when it exists.
 # On Render/another ephemeral host, the API downloads this file automatically
@@ -342,7 +489,7 @@ DRIVE_DOWNLOAD_SEMAPHORE = threading.BoundedSemaphore(
 _DRIVE_THREAD_LOCAL = threading.local()
 
 SCOPES = [
-    "https://www.googleapis.com/auth/drive.readonly"
+    "https://www.googleapis.com/auth/drive",
 ]
 
 IMAGE_EXTENSIONS = {
@@ -1399,6 +1546,334 @@ def load_small_image_index():
         return {}
 
 
+
+# ============================================================
+# MUTABLE SMALL INDEX - GOOGLE DRIVE
+# ============================================================
+
+_small_live_index_lock = threading.RLock()
+_small_live_index_file_id = None
+_small_live_index_data = None
+
+
+def _drive_file_metadata(file_id):
+    return execute_with_retry(
+        get_drive().files().get(
+            fileId=file_id,
+            fields="id,name,mimeType,parents",
+            supportsAllDrives=True,
+        )
+    )
+
+
+def _find_drive_file_by_name(parent_id, filename):
+    response = execute_with_retry(
+        get_drive().files().list(
+            q=(
+                f"'{parent_id}' in parents "
+                "and trashed=false "
+                f"and name='{filename.replace(chr(39), chr(92)+chr(39))}'"
+            ),
+            fields="files(id,name,mimeType,parents)",
+            pageSize=10,
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True,
+        )
+    )
+    files = response.get("files", [])
+    return files[0] if files else None
+
+
+def _create_drive_folder(parent_id, name):
+    body = {
+        "name": name,
+        "mimeType": "application/vnd.google-apps.folder",
+        "parents": [parent_id],
+    }
+    return execute_with_retry(
+        get_drive().files().create(
+            body=body,
+            fields="id,name,mimeType,parents",
+            supportsAllDrives=True,
+        )
+    ).execute()
+
+
+def _get_or_create_drive_folder(parent_id, name):
+    existing = _find_drive_file_by_name(parent_id, name)
+    if existing and existing.get("mimeType") == "application/vnd.google-apps.folder":
+        return existing
+
+    return _create_drive_folder(parent_id, name)
+
+
+def _load_live_small_index():
+    global _small_live_index_file_id, _small_live_index_data
+
+    with _small_live_index_lock:
+        if _small_live_index_data is not None:
+            return _small_live_index_data
+
+        # 1. Use configured file ID when provided.
+        file_info = None
+        if SMALL_IMAGE_INDEX_DRIVE_FILE_ID:
+            try:
+                file_info = _drive_file_metadata(
+                    SMALL_IMAGE_INDEX_DRIVE_FILE_ID
+                )
+            except Exception as e:
+                print(
+                    "[Live Small Index] "
+                    f"configured file unavailable: {e}"
+                )
+
+        # 2. Otherwise find/create the live index in the root folder.
+        if file_info is None:
+            file_info = _find_drive_file_by_name(
+                DRIVE_ROOT_FOLDER_ID,
+                SMALL_IMAGE_INDEX_DRIVE_FILENAME,
+            )
+
+        if file_info:
+            file_id = file_info["id"]
+            request = get_drive().files().get_media(
+                fileId=file_id,
+                supportsAllDrives=True,
+            )
+            buffer = BytesIO()
+            downloader = MediaIoBaseDownload(
+                buffer,
+                request,
+                chunksize=1024 * 1024,
+            )
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
+
+            try:
+                data = json.loads(
+                    buffer.getvalue().decode("utf-8")
+                )
+            except Exception as e:
+                raise RuntimeError(
+                    f"Live small index JSON เสียหาย: {e}"
+                )
+
+            if not isinstance(data, dict):
+                raise RuntimeError(
+                    "Live small index ต้องเป็น JSON object"
+                )
+
+            _small_live_index_file_id = file_id
+            _small_live_index_data = data
+            print(
+                "[Live Small Index] "
+                f"Loaded: {len(data):,} files | Drive file {file_id}"
+            )
+            return data
+
+        # 3. First run: seed the live index from the GitHub repository copy.
+        seed = load_small_image_index()
+        if not seed:
+            raise RuntimeError(
+                "ไม่พบ small_image_index.json สำหรับสร้าง Live Index"
+            )
+
+        body = {
+            "name": SMALL_IMAGE_INDEX_DRIVE_FILENAME,
+            "parents": [DRIVE_ROOT_FOLDER_ID],
+            "mimeType": "application/json",
+        }
+
+        media = MediaIoBaseUpload(
+            BytesIO(
+                json.dumps(
+                    seed,
+                    ensure_ascii=False,
+                    indent=2,
+                ).encode("utf-8")
+            ),
+            mimetype="application/json",
+            resumable=False,
+        )
+
+        created = execute_with_retry(
+            get_drive().files().create(
+                body=body,
+                media_body=media,
+                fields="id,name,mimeType,parents",
+                supportsAllDrives=True,
+            )
+        ).execute()
+
+        _small_live_index_file_id = created["id"]
+        _small_live_index_data = dict(seed)
+
+        print(
+            "[Live Small Index] "
+            f"Created: {len(seed):,} files | Drive file {_small_live_index_file_id}"
+        )
+        print(
+            "[Live Small Index] "
+            "IMPORTANT: set SMALL_IMAGE_INDEX_DRIVE_FILE_ID to "
+            f"{_small_live_index_file_id} in Render for stable lookup."
+        )
+
+        return _small_live_index_data
+
+
+def _save_live_small_index():
+    with _small_live_index_lock:
+        if not _small_live_index_file_id or _small_live_index_data is None:
+            raise RuntimeError("Live small index ยังไม่ได้โหลด")
+
+        payload = json.dumps(
+            _small_live_index_data,
+            ensure_ascii=False,
+            indent=2,
+        ).encode("utf-8")
+
+        media = MediaIoBaseUpload(
+            BytesIO(payload),
+            mimetype="application/json",
+            resumable=False,
+        )
+
+        execute_with_retry(
+            get_drive().files().update(
+                fileId=_small_live_index_file_id,
+                media_body=media,
+                fields="id,name,mimeType",
+                supportsAllDrives=True,
+            )
+        ).execute()
+
+        print(
+            "[Live Small Index] "
+            f"Saved: {len(_small_live_index_data):,} files"
+        )
+
+
+def _add_image_to_live_index(file_info, relative_path):
+    with _small_live_index_lock:
+        index = _load_live_small_index()
+        key = norm_path(relative_path)
+
+        index[key] = {
+            "id": file_info["id"],
+            "name": file_info["name"],
+            "path": relative_path.replace("\\", "/"),
+            "mimeType": file_info.get("mimeType", "image/jpeg"),
+        }
+
+        _save_live_small_index()
+
+
+def _normalize_upload_filename(name):
+    name = str(name or "").strip()
+    name = re.sub(r"[\\\\/]+", "_", name)
+    name = re.sub(r"[^A-Za-z0-9._\\-ก-๙ ]+", "_", name)
+    return name.strip() or "image.jpg"
+
+
+def _unique_drive_filename(parent_id, filename):
+    filename = _normalize_upload_filename(filename)
+    stem = Path(filename).stem
+    suffix = Path(filename).suffix or ".jpg"
+
+    candidate = filename
+    counter = 1
+
+    while _find_drive_file_by_name(parent_id, candidate):
+        counter += 1
+        candidate = f"{stem}_{counter}{suffix}"
+
+    return candidate
+
+
+def _upload_image_to_drive(upload_file, parent_id, filename):
+    filename = _unique_drive_filename(parent_id, filename)
+
+    content_type = (
+        upload_file.content_type
+        or "image/jpeg"
+    )
+
+    if not content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"ไฟล์ {filename} ไม่ใช่รูปภาพ",
+        )
+
+    upload_file.file.seek(0)
+
+    media = MediaIoBaseUpload(
+        upload_file.file,
+        mimetype=content_type,
+        resumable=True,
+        chunksize=1024 * 1024,
+    )
+
+    body = {
+        "name": filename,
+        "parents": [parent_id],
+    }
+
+    created = execute_with_retry(
+        get_drive().files().create(
+            body=body,
+            media_body=media,
+            fields="id,name,mimeType,parents",
+            supportsAllDrives=True,
+        )
+    ).execute()
+
+    return created
+
+
+def _case_drive_folder(case_id, year):
+    year_text = str(year or datetime.now().year).strip()
+    root = _get_or_create_drive_folder(
+        DRIVE_ROOT_FOLDER_ID,
+        "AIR4 Web Cases",
+    )
+    year_folder = _get_or_create_drive_folder(
+        root["id"],
+        year_text,
+    )
+    case_folder = _get_or_create_drive_folder(
+        year_folder["id"],
+        str(case_id).strip(),
+    )
+    return case_folder, f"AIR4 Web Cases/{year_text}/{case_id}"
+
+
+def _validate_new_case_id(case_id):
+    value = str(case_id or "").strip().upper()
+
+    if not re.fullmatch(r"AP\d{2}-\d+", value):
+        raise HTTPException(
+            status_code=400,
+            detail="Case ID ต้องอยู่ในรูปแบบ AP68-123",
+        )
+
+    existing_csv = build_cases()
+    if value in existing_csv:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Case ID {value} มีอยู่แล้วในข้อมูลเดิม",
+        )
+
+    for case in _load_new_cases():
+        if str(case.get("case_id", "")).upper() == value:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Case ID {value} มีอยู่แล้ว",
+            )
+
+    return value
+
+
 # ============================================================
 # MATCH CSV PATH -> DRIVE FILE
 # ============================================================
@@ -1418,7 +1893,10 @@ def find_drive_file(
     if not csv_path:
         return None
 
-    index = load_small_image_index()
+    try:
+        index = _load_live_small_index()
+    except Exception:
+        index = load_small_image_index()
 
     if not index:
         return None
@@ -1537,7 +2015,10 @@ def _find_index_file_by_id(file_id):
     ใช้เฉพาะ /image/{file_id} โดยตรง
     ค้นจาก small production index เท่านั้น
     """
-    index = load_small_image_index()
+    try:
+        index = _load_live_small_index()
+    except Exception:
+        index = load_small_image_index()
 
     for info in index.values():
         if info.get("id") == file_id:
@@ -2344,6 +2825,157 @@ def me(
 
 
 # ============================================================
+# CREATE CASE FROM WEB
+# ============================================================
+
+@app.post("/cases")
+def create_case(
+    case_id: str = Form(...),
+    customer: str = Form(""),
+    brand: str = Form(...),
+    model: str = Form(...),
+    year: str = Form(""),
+    mileage: str = Form(""),
+    low_before: str = Form(""),
+    low_after: str = Form(""),
+    high_before: str = Form(""),
+    high_after: str = Form(""),
+    coil_images: list[UploadFile] = File(default=[]),
+    dirty_water_images: list[UploadFile] = File(default=[]),
+    authorization: str | None = Header(default=None),
+):
+    user = current_user(authorization=authorization, token=None)
+    require_admin(user)
+
+    case_id = _validate_new_case_id(case_id)
+
+    brand = str(brand or "").strip()
+    model = str(model or "").strip()
+    if not brand or not model:
+        raise HTTPException(
+            status_code=400,
+            detail="กรุณาระบุยี่ห้อและรุ่นรถ",
+        )
+
+    year = str(year or "").strip()
+    mileage = str(mileage or "").strip()
+    customer = str(customer or "").strip()
+
+    all_uploads = [
+        ("coil", upload)
+        for upload in (coil_images or [])
+        if upload and upload.filename
+    ] + [
+        ("dirty water", upload)
+        for upload in (dirty_water_images or [])
+        if upload and upload.filename
+    ]
+
+    if not all_uploads:
+        raise HTTPException(
+            status_code=400,
+            detail="กรุณาเลือกรูปภาพอย่างน้อย 1 รูป",
+        )
+
+    # Maximum 5 images in the gallery preview, matching the existing system.
+    if len(all_uploads) > MAX_IMAGES_PER_CASE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"อัปโหลดได้สูงสุด {MAX_IMAGES_PER_CASE} รูปต่อเคส",
+        )
+
+    case_folder, case_path = _case_drive_folder(
+        case_id,
+        year or datetime.now().year,
+    )
+
+    uploaded_images = []
+    index_entries = []
+
+    try:
+        # Keep the same order the user selected in the form.
+        for category, upload in all_uploads:
+            file_info = _upload_image_to_drive(
+                upload,
+                case_folder["id"],
+                upload.filename,
+            )
+
+            relative_path = (
+                f"{case_path}/{file_info['name']}"
+            )
+
+            image_record_new = {
+                "id": file_info["id"],
+                "name": file_info["name"],
+                "path": relative_path,
+                "mimeType": file_info.get(
+                    "mimeType",
+                    upload.content_type or "image/jpeg",
+                ),
+                "type": category,
+            }
+
+            uploaded_images.append(image_record_new)
+            index_entries.append(
+                (file_info, relative_path)
+            )
+
+        # Update the live index once after all uploads succeed.
+        with _small_live_index_lock:
+            live_index = _load_live_small_index()
+            for file_info, relative_path in index_entries:
+                live_index[norm_path(relative_path)] = {
+                    "id": file_info["id"],
+                    "name": file_info["name"],
+                    "path": relative_path,
+                    "mimeType": file_info.get("mimeType", "image/jpeg"),
+                }
+            _save_live_small_index()
+
+        today = datetime.now().strftime("%Y-%m-%d")
+        case_data = {
+            "case_id": case_id,
+            "customer": customer,
+            "brand": brand,
+            "model": model,
+            "year": year,
+            "mileage": mileage,
+            "low_before": str(low_before or "").strip(),
+            "low_after": str(low_after or "").strip(),
+            "high_before": str(high_before or "").strip(),
+            "high_after": str(high_after or "").strip(),
+            "date": today,
+            "case_folder": case_path,
+            "images": uploaded_images,
+            "created_by": user["username"],
+        }
+
+        _append_new_case_to_sheet(case_data)
+
+        return {
+            "ok": True,
+            "message": "เพิ่มเคสเรียบร้อย",
+            "case": case_data,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(
+            "[Create Case] ERROR: "
+            f"{type(e).__name__}: {e}"
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "บันทึกเคสไม่สำเร็จ: "
+                f"{e}"
+            ),
+        )
+
+
+# ============================================================
 # CASE LIST
 # ============================================================
 
@@ -2358,6 +2990,7 @@ def get_cases(
 
     output = []
 
+    # Existing production cases come from the frozen CSV.
     for case in build_cases().values():
 
         if not user_can_access_brand(user, case.get("brand")):
@@ -2402,9 +3035,43 @@ def get_cases(
             "high_after": case["high_after"],
             "image_count": len(case["images"]),
             "images": preview_images,
+            "source": "csv",
         })
 
-    return sorted(output, key=lambda x: x["case_id"] or "")
+    # Web-created cases live in Google Sheets so they survive Render restarts.
+    access_token = _get_token_from_request(authorization, None)
+    for case in _load_new_cases():
+        if not user_can_access_brand(user, case.get("brand")):
+            continue
+
+        preview_images = []
+        for image in case.get("images", [])[:MAX_IMAGES_PER_CASE]:
+            img = dict(image)
+            path = img.get("path", "")
+            img["url"] = image_url(path, access_token) if path else None
+            preview_images.append(img)
+
+        output.append({
+            "case_id": case["case_id"],
+            "customer": case.get("customer"),
+            "brand": case.get("brand"),
+            "model": case.get("model"),
+            "year": case.get("year"),
+            "case_folder": case.get("case_folder"),
+            "received_date": None,
+            "appointment_date": None,
+            "mileage": case.get("mileage"),
+            "low_before": case.get("low_before"),
+            "low_after": case.get("low_after"),
+            "high_before": case.get("high_before"),
+            "high_after": case.get("high_after"),
+            "date": case.get("date"),
+            "image_count": len(case.get("images", [])),
+            "images": preview_images,
+            "source": "web",
+        })
+
+    return sorted(output, key=lambda x: x["case_id"] or "", reverse=True)
 
 
 # ============================================================

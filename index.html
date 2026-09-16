@@ -885,97 +885,151 @@
                                 </button>
                             </div>
 
-                            <form onsubmit="handleSaveCaseForm(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-sm">
+                            <form onsubmit="handleSaveCaseForm(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto text-sm" enctype="multipart/form-data">
                                 <input type="hidden" name="caseId" value="${item.id || ''}" />
+
+                                ${!isEdit ? `
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Case ID *</label>
+                                    <input
+                                        type="text"
+                                        name="newCaseId"
+                                        required
+                                        placeholder="เช่น AP68-123"
+                                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono"
+                                    />
+                                    <div class="text-[11px] text-slate-500 mt-1">ใช้รูปแบบ AP68-123 และต้องไม่ซ้ำกับเคสเดิม</div>
+                                </div>
+                                ` : ''}
+
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-700 mb-1">ยี่ห้อรถ *</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             name="brand"
                                             required
                                             value="${getCaseBrand(item) || 'Toyota'}"
-                                            placeholder="เช่น Toyota, Honda" 
+                                            placeholder="เช่น Toyota, Honda"
                                             class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-700 mb-1">รุ่นรถ *</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             name="model"
                                             required
                                             value="${getCaseModel(item) || ''}"
-                                            placeholder="เช่น Camry, Civic" 
+                                            placeholder="เช่น Camry, Civic"
                                             class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                     </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-700 mb-1">ปีรถ (ค.ศ.)</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             name="year"
                                             value="${getCaseYear(item) || new Date().getFullYear().toString()}"
-                                            placeholder="เช่น 2022" 
+                                            placeholder="เช่น 2022"
                                             class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อลูกค้า / ศูนย์บริการ</label>
+                                        <input
+                                            type="text"
+                                            name="customer"
+                                            value="${item.customer || ''}"
+                                            placeholder="เช่น Toyota Dealer"
+                                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-700 mb-1">เลขไมล์ (กม.)</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             name="mileage"
                                             value="${item.mileage || ''}"
-                                            placeholder="เช่น 85,000" 
-                                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">แรงดัน Low Side (PSI)</label>
-                                        <input 
-                                            type="text" 
-                                            name="pressureLow"
-                                            value="${item.pressureLow || ''}"
-                                            placeholder="เช่น 32" 
-                                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">แรงดัน High Side (PSI)</label>
-                                        <input 
-                                            type="text" 
-                                            name="pressureHigh"
-                                            value="${item.pressureHigh || ''}"
-                                            placeholder="เช่น 185" 
+                                            placeholder="เช่น 85,000"
                                             class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                     </div>
                                 </div>
 
                                 <div class="border-t border-slate-200 pt-3">
-                                    <label class="block font-semibold text-slate-800 text-xs mb-1">รายการ URL รูปภาพผลงาน (ใส่ 1 URL ต่อ 1 บรรทัด)</label>
-                                    <textarea 
-                                        name="imageUrls"
-                                        rows="5"
-                                        placeholder="https://images.example.com/photo1.jpg&#10;https://images.example.com/photo2.jpg"
-                                        class="w-full px-3 py-2 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-                                    >${imageUrls}</textarea>
-                                    <span class="text-[11px] text-slate-500">ระบบจะสร้างอาร์เรย์ images[] พร้อมกำหนดค่า type: "unknown" ให้อัตโนมัติ</span>
+                                    <div class="text-xs font-semibold text-slate-800 mb-2">ค่าแรงดัน A/C (PSI)</div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Low Before</label>
+                                            <input type="text" name="lowBefore" value="${item.low_before ?? ''}" placeholder="เช่น 32" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Low After</label>
+                                            <input type="text" name="lowAfter" value="${item.low_after ?? ''}" placeholder="เช่น 30" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">High Before</label>
+                                            <input type="text" name="highBefore" value="${item.high_before ?? ''}" placeholder="เช่น 210" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">High After</label>
+                                            <input type="text" name="highAfter" value="${item.high_after ?? ''}" placeholder="เช่น 180" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                        </div>
+                                    </div>
                                 </div>
 
+                                ${!isEdit ? `
+                                <div class="border-t border-slate-200 pt-3 space-y-3">
+                                    <div>
+                                        <label class="block font-semibold text-slate-800 text-xs mb-1">รูปคอยล์เย็น (Coil)</label>
+                                        <input
+                                            type="file"
+                                            name="coilImages"
+                                            accept="image/*"
+                                            multiple
+                                            class="w-full text-xs text-slate-600 border rounded-lg p-2 bg-slate-50"
+                                        />
+                                        <div class="text-[11px] text-slate-500 mt-1">เลือกได้หลายรูป — รูปทั้งหมดรวมกับ Dirty Water ไม่เกิน 5 รูป</div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block font-semibold text-slate-800 text-xs mb-1">รูปน้ำสกปรก (Dirty Water)</label>
+                                        <input
+                                            type="file"
+                                            name="dirtyWaterImages"
+                                            accept="image/*"
+                                            multiple
+                                            class="w-full text-xs text-slate-600 border rounded-lg p-2 bg-slate-50"
+                                        />
+                                    </div>
+                                </div>
+                                ` : `
+                                <div class="border-t border-slate-200 pt-3">
+                                    <label class="block font-semibold text-slate-800 text-xs mb-1">รายการ URL รูปภาพเดิม</label>
+                                    <textarea
+                                        name="imageUrls"
+                                        rows="4"
+                                        placeholder="https://..."
+                                        class="w-full px-3 py-2 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"
+                                    >${imageUrls}</textarea>
+                                    <span class="text-[11px] text-slate-500">โหมดแก้ไขเดิมยังคงใช้การแก้ข้อมูลในหน้าเว็บ</span>
+                                </div>
+                                `}
+
                                 <div class="pt-4 flex justify-end space-x-3 border-t">
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onclick="closeModal()"
                                         class="px-4 py-2 border text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50"
                                     >
                                         ยกเลิก
                                     </button>
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow"
                                     >
                                         ${isEdit ? 'บันทึกการแก้ไข' : 'บันทึกเคสใหม่'}
@@ -1327,54 +1381,157 @@
             closeModal();
         }
 
-        function handleSaveCaseForm(e) {
+        async function handleSaveCaseForm(e) {
             e.preventDefault();
+
             const form = e.target;
             const formData = new FormData(form);
+            const isEdit = !!(state.activeCaseItem && state.activeCaseItem.id);
 
-            const caseId = formData.get('caseId') || `case-${Date.now()}`;
-            const brand = formData.get('brand');
-            const model = formData.get('model');
-            const year = formData.get('year');
-            const mileage = formData.get('mileage');
-            const pressureLow = formData.get('pressureLow');
-            const pressureHigh = formData.get('pressureHigh');
-            const imageUrlsText = formData.get('imageUrls') || '';
+            // Keep the existing edit behavior for now.
+            // The new "เพิ่มเคส" flow is the persistent Drive + Google Sheets flow.
+            if (isEdit) {
+                const caseId = formData.get('caseId');
+                const brand = formData.get('brand');
+                const model = formData.get('model');
+                const year = formData.get('year');
+                const mileage = formData.get('mileage');
+                const imageUrlsText = formData.get('imageUrls') || '';
 
-            const urls = imageUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
-            const existingImages = getCaseImages(state.activeCaseItem);
+                const urls = imageUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
+                const existingImages = getCaseImages(state.activeCaseItem);
 
-            const updatedImages = urls.map((url, idx) => {
-                const matched = existingImages[idx];
-                return {
-                    id: matched?.id || `img-${Date.now()}-${idx}`,
-                    name: matched?.name || `IMG${String(idx + 1).padStart(3, '0')}.jpg`,
-                    url: url,
-                    type: matched?.type || 'unknown'
+                const updatedImages = urls.map((url, idx) => {
+                    const matched = existingImages[idx];
+                    return {
+                        id: matched?.id || `img-${Date.now()}-${idx}`,
+                        name: matched?.name || `IMG${String(idx + 1).padStart(3, '0')}.jpg`,
+                        url: url,
+                        type: matched?.type || 'unknown'
+                    };
+                });
+
+                const savedCase = {
+                    ...state.activeCaseItem,
+                    id: caseId,
+                    brand,
+                    model,
+                    year,
+                    mileage,
+                    low_before: formData.get('lowBefore') || '',
+                    low_after: formData.get('lowAfter') || '',
+                    high_before: formData.get('highBefore') || '',
+                    high_after: formData.get('highAfter') || '',
+                    pressureLow: formData.get('lowAfter') || '',
+                    pressureHigh: formData.get('highAfter') || '',
+                    date: state.activeCaseItem?.date || new Date().toISOString().split('T')[0],
+                    images: updatedImages
                 };
-            });
 
-            const savedCase = {
-                id: caseId,
-                brand,
-                model,
-                year,
-                mileage,
-                pressureLow,
-                pressureHigh,
-                date: state.activeCaseItem?.date || new Date().toISOString().split('T')[0],
-                images: updatedImages
-            };
+                const existsIdx = state.cases.findIndex(c => getCaseId(c) === caseId);
+                if (existsIdx >= 0) {
+                    state.cases[existsIdx] = savedCase;
+                }
 
-            const existsIdx = state.cases.findIndex(c => getCaseId(c) === caseId);
-            if (existsIdx >= 0) {
-                state.cases[existsIdx] = savedCase;
-            } else {
-                state.cases.unshift(savedCase);
+                closeModal();
+                showToast('บันทึกข้อมูลเคสเรียบร้อย');
+                return;
             }
 
-            closeModal();
-            showToast(existsIdx >= 0 ? 'บันทึกข้อมูลเคสเรียบร้อย' : 'เพิ่มเคสใหม่เรียบร้อย');
+            const token = getAccessToken();
+
+            if (!token) {
+                showToast('ไม่พบ Session กรุณาเข้าสู่ระบบใหม่');
+                return;
+            }
+
+            const newCaseId = String(formData.get('newCaseId') || '').trim().toUpperCase();
+            const coilFiles = Array.from(form.querySelector('input[name="coilImages"]')?.files || []);
+            const dirtyWaterFiles = Array.from(form.querySelector('input[name="dirtyWaterImages"]')?.files || []);
+            const totalImages = coilFiles.length + dirtyWaterFiles.length;
+
+            if (!/^AP\d{2}-\d+$/.test(newCaseId)) {
+                showToast('Case ID ต้องอยู่ในรูปแบบ AP68-123');
+                return;
+            }
+
+            if (totalImages === 0) {
+                showToast('กรุณาเลือกรูปภาพอย่างน้อย 1 รูป');
+                return;
+            }
+
+            if (totalImages > 5) {
+                showToast('อัปโหลดได้สูงสุด 5 รูปต่อเคส');
+                return;
+            }
+
+            const payload = new FormData();
+            payload.append('case_id', newCaseId);
+            payload.append('customer', String(formData.get('customer') || ''));
+            payload.append('brand', String(formData.get('brand') || ''));
+            payload.append('model', String(formData.get('model') || ''));
+            payload.append('year', String(formData.get('year') || ''));
+            payload.append('mileage', String(formData.get('mileage') || ''));
+            payload.append('low_before', String(formData.get('lowBefore') || ''));
+            payload.append('low_after', String(formData.get('lowAfter') || ''));
+            payload.append('high_before', String(formData.get('highBefore') || ''));
+            payload.append('high_after', String(formData.get('highAfter') || ''));
+
+            coilFiles.forEach(file => payload.append('coil_images', file, file.name));
+            dirtyWaterFiles.forEach(file => payload.append('dirty_water_images', file, file.name));
+
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton?.textContent || 'บันทึกเคสใหม่';
+
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'กำลังอัปโหลด...';
+                submitButton.classList.add('opacity-60', 'cursor-not-allowed');
+            }
+
+            try {
+                const response = await fetch(API_BASE + '/cases', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: payload
+                });
+
+                let result = null;
+                try {
+                    result = await response.json();
+                } catch (_) {}
+
+                if (response.status === 401) {
+                    localStorage.removeItem(ACCESS_TOKEN_KEY);
+                    localStorage.removeItem(USER_KEY);
+                    state.currentUser = null;
+                    state.cases = [];
+                    closeModal();
+                    renderApp();
+                    showToast('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(result?.detail || `Server responded with ${response.status}`);
+                }
+
+                closeModal();
+                showToast('เพิ่มเคสใหม่และอัปโหลดรูปเรียบร้อยแล้ว');
+                await fetchCasesData();
+
+            } catch (err) {
+                console.error('Create case error:', err);
+                showToast(err.message || 'ไม่สามารถเพิ่มเคสได้');
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                    submitButton.classList.remove('opacity-60', 'cursor-not-allowed');
+                }
+            }
         }
 
         function handleSaveShopConfig(e) {
