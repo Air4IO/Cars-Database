@@ -664,7 +664,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
@@ -1596,7 +1596,7 @@ def _create_drive_folder(parent_id, name):
             fields="id,name,mimeType,parents",
             supportsAllDrives=True,
         )
-    ).execute()
+    )
 
 
 def _get_or_create_drive_folder(parent_id, name):
@@ -1704,7 +1704,7 @@ def _load_live_small_index():
                 fields="id,name,mimeType,parents",
                 supportsAllDrives=True,
             )
-        ).execute()
+        )
 
         _small_live_index_file_id = created["id"]
         _small_live_index_data = dict(seed)
@@ -1746,7 +1746,7 @@ def _save_live_small_index():
                 fields="id,name,mimeType",
                 supportsAllDrives=True,
             )
-        ).execute()
+        )
 
         print(
             "[Live Small Index] "
@@ -1826,7 +1826,7 @@ def _upload_image_to_drive(upload_file, parent_id, filename):
             fields="id,name,mimeType,parents",
             supportsAllDrives=True,
         )
-    ).execute()
+    )
 
     return created
 
@@ -3016,7 +3016,7 @@ def _trash_drive_file(file_id: str):
             fields="id,trashed",
             supportsAllDrives=True,
         )
-    ).execute()
+    )
 
 
 def _delete_web_case_from_sheet(ws, row_number: int):
