@@ -18,12 +18,15 @@ import pandas as pd
 import gspread
 
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleAuthRequest
+from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
-from fastapi import FastAPI, HTTPException, Header, Query, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Header, Query, File, UploadFile, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import StreamingResponse, Response, HTMLResponse
 from pydantic import BaseModel
 
 
@@ -402,6 +405,26 @@ API_PUBLIC_URL = os.getenv(
     "http://127.0.0.1:8000",
 ).rstrip("/")
 
+# ============================================================
+# GOOGLE DRIVE OAUTH - COMPANY GMAIL
+# ============================================================
+# The Service Account remains responsible for Google Sheets.
+# Google Drive uses OAuth so uploaded files are created by the
+# company Gmail account that has Editor access to the image folder.
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "").strip()
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET", "").strip()
+GOOGLE_OAUTH_REDIRECT_URI = os.getenv(
+    "GOOGLE_OAUTH_REDIRECT_URI",
+    API_PUBLIC_URL + "/oauth2callback",
+).strip()
+GOOGLE_OAUTH_REFRESH_TOKEN = os.getenv("GOOGLE_OAUTH_REFRESH_TOKEN", "").strip()
+
+GOOGLE_OAUTH_SCOPES = [
+    "https://www.googleapis.com/auth/drive",
+]
+
+
+
 # ใส่ Folder ID ของ Shared folder ที่เก็บรูปทั้งหมด
 DRIVE_ROOT_FOLDER_ID = (
     "11r6rLHnNFUj15KsJ1A5ebDERyQWKWjMC"
@@ -714,11 +737,41 @@ def execute_with_retry(
     raise last_error
 
 
+def _build_drive_from_oauth():
+    if not GOOGLE_OAUTH_CLIENT_ID or not GOOGLE_OAUTH_CLIENT_SECRET:
+        raise RuntimeError(
+            "Google Drive OAuth ยังไม่ได้ตั้ง GOOGLE_OAUTH_CLIENT_ID / "
+            "GOOGLE_OAUTH_CLIENT_SECRET"
+        )
+
+    if not GOOGLE_OAUTH_REFRESH_TOKEN:
+        raise RuntimeError(
+            "Google Drive OAuth ยังไม่มี GOOGLE_OAUTH_REFRESH_TOKEN. "
+            "เปิด /oauth/authorize เพื่อ authorize บัญชีบริษัทก่อน"
+        )
+
+    credentials = Credentials(
+        token=None,
+        refresh_token=GOOGLE_OAUTH_REFRESH_TOKEN,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=GOOGLE_OAUTH_CLIENT_ID,
+        client_secret=GOOGLE_OAUTH_CLIENT_SECRET,
+        scopes=GOOGLE_OAUTH_SCOPES,
+    )
+
+    credentials.refresh(GoogleAuthRequest())
+
+    return build(
+        "drive",
+        "v3",
+        credentials=credentials,
+        cache_discovery=False,
+    )
+
+
 def get_drive():
-
-    # ใช้ Drive client แยกต่อ thread
-    # ไม่แชร์ HTTP connection เดียวกันระหว่างหลาย image requests
-
+    # Use the company Gmail OAuth account when a refresh token is configured.
+    # Keep Service Account as a read-only fallback during migration/local setup.
     drive = getattr(
         _DRIVE_THREAD_LOCAL,
         "drive",
@@ -728,20 +781,23 @@ def get_drive():
     if drive is not None:
         return drive
 
-    if not SERVICE_ACCOUNT_FILE.exists():
+    if GOOGLE_OAUTH_REFRESH_TOKEN:
+        drive = _build_drive_from_oauth()
+        _DRIVE_THREAD_LOCAL.drive = drive
+        return drive
 
+    if not SERVICE_ACCOUNT_FILE.exists():
         raise RuntimeError(
             "ไม่พบไฟล์ "
-            f"{SERVICE_ACCOUNT_FILE}"
+            f"{SERVICE_ACCOUNT_FILE} "
+            "และยังไม่ได้ตั้ง GOOGLE_OAUTH_REFRESH_TOKEN"
         )
 
     credentials = (
         service_account
         .Credentials
         .from_service_account_file(
-            str(
-                SERVICE_ACCOUNT_FILE
-            ),
+            str(SERVICE_ACCOUNT_FILE),
             scopes=SCOPES,
         )
     )
@@ -756,6 +812,163 @@ def get_drive():
     _DRIVE_THREAD_LOCAL.drive = drive
 
     return drive
+
+
+# ============================================================
+# GOOGLE DRIVE OAUTH AUTHORIZATION
+# ============================================================
+
+def _oauth_state_create():
+    payload = f"{int(time.time())}:{secrets.token_urlsafe(18)}"
+    payload_part = _b64encode(payload.encode("utf-8"))
+    signature = hmac.new(
+        AUTH_SECRET,
+        payload_part.encode("ascii"),
+        hashlib.sha256,
+    ).digest()
+    return f"{payload_part}.{_b64encode(signature)}"
+
+
+def _oauth_state_verify(state: str):
+    try:
+        payload_part, signature_part = str(state or "").split(".", 1)
+        expected = hmac.new(
+            AUTH_SECRET,
+            payload_part.encode("ascii"),
+            hashlib.sha256,
+        ).digest()
+        if not hmac.compare_digest(expected, _b64decode(signature_part)):
+            raise ValueError("Invalid OAuth state signature")
+
+        payload = _b64decode(payload_part).decode("utf-8")
+        timestamp_text, _nonce = payload.split(":", 1)
+        if int(time.time()) - int(timestamp_text) > 600:
+            raise ValueError("OAuth state expired")
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"OAuth state ไม่ถูกต้องหรือหมดอายุ: {e}",
+        )
+
+
+def _oauth_client_config():
+    if not GOOGLE_OAUTH_CLIENT_ID or not GOOGLE_OAUTH_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "ยังไม่ได้ตั้ง GOOGLE_OAUTH_CLIENT_ID / "
+                "GOOGLE_OAUTH_CLIENT_SECRET ใน Render"
+            ),
+        )
+
+    return {
+        "web": {
+            "client_id": GOOGLE_OAUTH_CLIENT_ID,
+            "client_secret": GOOGLE_OAUTH_CLIENT_SECRET,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": [GOOGLE_OAUTH_REDIRECT_URI],
+        }
+    }
+
+
+def _oauth_flow(state=None):
+    flow = Flow.from_client_config(
+        _oauth_client_config(),
+        scopes=GOOGLE_OAUTH_SCOPES,
+        state=state,
+    )
+    flow.redirect_uri = GOOGLE_OAUTH_REDIRECT_URI
+    return flow
+
+
+@app.get("/oauth/authorize")
+def oauth_authorize():
+    state = _oauth_state_create()
+    flow = _oauth_flow(state=state)
+
+    authorization_url, _ = flow.authorization_url(
+        access_type="offline",
+        prompt="consent",
+        include_granted_scopes="true",
+    )
+
+    # Redirect the browser directly to Google.
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(authorization_url, status_code=302)
+
+
+@app.get("/oauth2callback", response_class=HTMLResponse)
+def oauth_callback(
+    request: Request,
+    code: str | None = Query(default=None),
+    state: str | None = Query(default=None),
+    error: str | None = Query(default=None),
+):
+    if error:
+        return HTMLResponse(
+            f"<h2>Google OAuth ไม่สำเร็จ</h2><p>{error}</p>",
+            status_code=400,
+        )
+
+    if not code or not state:
+        return HTMLResponse(
+            "<h2>Google OAuth ไม่สำเร็จ</h2><p>ไม่พบ authorization code หรือ state</p>",
+            status_code=400,
+        )
+
+    _oauth_state_verify(state)
+
+    flow = _oauth_flow(state=state)
+    flow.fetch_token(
+        authorization_response=str(request.url),
+    )
+
+    refresh_token = flow.credentials.refresh_token
+    if not refresh_token:
+        return HTMLResponse(
+            "<h2>ไม่ได้รับ Refresh Token</h2>"
+            "<p>ให้ลองเปิด /oauth/authorize ใหม่ โดยระบบจะขอ consent ใหม่อีกครั้ง</p>",
+            status_code=400,
+        )
+
+    # Never write the refresh token to source code, logs, or a file.
+    # Show it once so the administrator can copy it into Render Secret.
+    safe_token = (
+        str(refresh_token)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+
+    return HTMLResponse(
+        """
+        <!doctype html>
+        <html><head><meta charset='utf-8'><title>AIR-4 OAuth Ready</title>
+        <style>body{font-family:Arial,sans-serif;max-width:900px;margin:50px auto;padding:20px;color:#1e293b}textarea{width:100%;height:120px;font-family:monospace} .warn{background:#fff7ed;border:1px solid #fdba74;padding:15px;border-radius:10px}</style>
+        </head><body>
+        <h2>Google Drive OAuth สำเร็จ</h2>
+        <p>บัญชี Google ที่ authorize ตอนนี้สามารถใช้ Google Drive สำหรับ AIR-4 ได้แล้ว</p>
+        <div class='warn'><b>สำคัญ:</b> Refresh Token นี้เป็นความลับ ห้ามใส่ใน GitHub และห้ามส่งให้ผู้อื่น</div>
+        <p>นำค่าด้านล่างไปตั้งเป็น Render Environment Variable:</p>
+        <p><b>GOOGLE_OAUTH_REFRESH_TOKEN</b></p>
+        <textarea readonly>""" + safe_token + """</textarea>
+        <p>หลังจาก Save & Deploy ใน Render แล้ว สามารถปิดหน้านี้ได้</p>
+        </body></html>
+        """,
+        status_code=200,
+    )
+
+
+@app.get("/oauth/status")
+def oauth_status():
+    return {
+        "client_configured": bool(GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET),
+        "redirect_uri": GOOGLE_OAUTH_REDIRECT_URI,
+        "refresh_token_configured": bool(GOOGLE_OAUTH_REFRESH_TOKEN),
+        "drive_mode": "oauth" if GOOGLE_OAUTH_REFRESH_TOKEN else "service_account_fallback",
+    }
 
 
 # ============================================================
@@ -2545,6 +2758,12 @@ def root():
             "/drive-index-status",
 
             "/build-drive-index",
+
+            "/oauth/authorize",
+
+            "/oauth2callback",
+
+            "/oauth/status",
         ],
     }
 
