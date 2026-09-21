@@ -818,8 +818,20 @@ def get_drive():
 # GOOGLE DRIVE OAUTH AUTHORIZATION
 # ============================================================
 
-def _oauth_state_create():
-    payload = f"{int(time.time())}:{secrets.token_urlsafe(18)}"
+def _oauth_state_create(code_verifier: str):
+    """
+    Create a signed OAuth state that also carries the PKCE code_verifier.
+
+    Render is stateless/ephemeral, so we cannot rely on an in-memory
+    session between /oauth/authorize and /oauth2callback. The verifier is
+    protected by the same HMAC signature as the state and is valid only
+    for this short-lived OAuth transaction.
+    """
+    payload = (
+        f"{int(time.time())}:"
+        f"{secrets.token_urlsafe(18)}:"
+        f"{code_verifier}"
+    )
     payload_part = _b64encode(payload.encode("utf-8"))
     signature = hmac.new(
         AUTH_SECRET,
@@ -841,9 +853,20 @@ def _oauth_state_verify(state: str):
             raise ValueError("Invalid OAuth state signature")
 
         payload = _b64decode(payload_part).decode("utf-8")
-        timestamp_text, _nonce = payload.split(":", 1)
+        parts = payload.split(":", 2)
+        if len(parts) != 3:
+            raise ValueError("OAuth state ไม่มี PKCE code verifier")
+
+        timestamp_text, _nonce, code_verifier = parts
+
         if int(time.time()) - int(timestamp_text) > 600:
             raise ValueError("OAuth state expired")
+
+        if not code_verifier:
+            raise ValueError("OAuth state ไม่มี PKCE code verifier")
+
+        return code_verifier
+
     except Exception as e:
         raise HTTPException(
             status_code=400,
@@ -884,13 +907,20 @@ def _oauth_flow(state=None):
 
 @app.get("/oauth/authorize")
 def oauth_authorize():
-    state = _oauth_state_create()
+    # google-auth-oauthlib uses PKCE for the authorization request.
+    # Generate the verifier ourselves so it can survive the redirect to
+    # /oauth2callback on Render without relying on server-side session state.
+    code_verifier = secrets.token_urlsafe(64)
+    state = _oauth_state_create(code_verifier)
+
     flow = _oauth_flow(state=state)
+    flow.code_verifier = code_verifier
 
     authorization_url, _ = flow.authorization_url(
         access_type="offline",
         prompt="consent",
         include_granted_scopes="true",
+        code_challenge_method="S256",
     )
 
     # Redirect the browser directly to Google.
@@ -917,11 +947,16 @@ def oauth_callback(
             status_code=400,
         )
 
-    _oauth_state_verify(state)
+    code_verifier = _oauth_state_verify(state)
 
     flow = _oauth_flow(state=state)
+    # The same verifier used to create the Google authorization request
+    # must be supplied when exchanging the authorization code.
+    flow.code_verifier = code_verifier
+
     flow.fetch_token(
         authorization_response=str(request.url),
+        code_verifier=code_verifier,
     )
 
     refresh_token = flow.credentials.refresh_token
