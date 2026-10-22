@@ -406,6 +406,17 @@ API_PUBLIC_URL = os.getenv(
 ).rstrip("/")
 
 # ============================================================
+# SUPABASE - PRODUCTION CASES/IMAGE METADATA (READ ONLY STAGE)
+# ============================================================
+# Keep the service-role key on Render only. Never expose it in the frontend.
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+SUPABASE_READ_ENABLED = os.getenv("SUPABASE_READ_ENABLED", "false").strip().lower() in {
+    "1", "true", "yes", "on"
+}
+SUPABASE_REST_TIMEOUT_SECONDS = float(os.getenv("SUPABASE_REST_TIMEOUT_SECONDS", "20"))
+
+# ============================================================
 # GOOGLE DRIVE OAUTH - COMPANY GMAIL
 # ============================================================
 # The Service Account remains responsible for Google Sheets.
@@ -1487,6 +1498,149 @@ def build_cases():
 
     print(f"[Build cases] DONE: {len(cases):,} cases from {total_rows:,} rows")
     return cases
+
+
+def _supabase_rest_get(table: str, query: str):
+    """Read rows from Supabase REST API using a server-side service-role key."""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise RuntimeError(
+            "Supabase ยังตั้งค่าไม่ครบ: ต้องกำหนด SUPABASE_URL และ "
+            "SUPABASE_SERVICE_ROLE_KEY ใน Render"
+        )
+
+    from urllib.request import Request as URLRequest, urlopen
+    from urllib.error import HTTPError, URLError
+
+    url = f"{SUPABASE_URL}/rest/v1/{table}?{query}"
+    request = URLRequest(
+        url,
+        headers={
+            "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urlopen(request, timeout=SUPABASE_REST_TIMEOUT_SECONDS) as response:
+            payload = response.read().decode("utf-8")
+        data = json.loads(payload)
+        if not isinstance(data, list):
+            raise RuntimeError(f"Supabase ตอบกลับรูปแบบที่ไม่คาดไว้จากตาราง {table}")
+        return data
+    except HTTPError as exc:
+        details = exc.read().decode("utf-8", errors="replace")[:800]
+        raise RuntimeError(
+            f"Supabase อ่านตาราง {table} ไม่สำเร็จ (HTTP {exc.code}): {details}"
+        ) from exc
+    except URLError as exc:
+        raise RuntimeError(f"เชื่อมต่อ Supabase ไม่สำเร็จ: {exc}") from exc
+
+
+@lru_cache(maxsize=1)
+def load_supabase_cases():
+    """
+    Load production cases and their Drive image references from Supabase.
+    Results are cached per Render process; restart/redeploy to refresh this cache.
+    """
+    from urllib.parse import urlencode
+
+    case_rows = _supabase_rest_get(
+        "cases",
+        urlencode({"select": "*", "order": "case_id.asc", "limit": "1000"}),
+    )
+    image_rows = _supabase_rest_get(
+        "images",
+        urlencode({"select": "*", "order": "case_id.asc,image_order.asc", "limit": "5000"}),
+    )
+
+    cases = {}
+    for row in case_rows:
+        case_id = str(row.get("case_id") or "").strip().upper()
+        if not case_id:
+            continue
+        cases[case_id] = {
+            "case_id": case_id,
+            "customer": None,
+            "brand": row.get("brand"),
+            "model": row.get("model"),
+            "year": row.get("year"),
+            "case_folder": None,
+            "received_date": None,
+            "appointment_date": None,
+            "mileage": row.get("mileage"),
+            "low_before": row.get("low_before"),
+            "low_after": row.get("low_after"),
+            "high_before": row.get("high_before"),
+            "high_after": row.get("high_after"),
+            "images": [],
+        }
+
+    for row in image_rows:
+        case_id = str(row.get("case_id") or "").strip().upper()
+        case = cases.get(case_id)
+        if not case:
+            continue
+        category = str(row.get("category") or "").strip()
+        if category.casefold() not in ALLOWED_IMAGE_TYPES:
+            continue
+        path = str(row.get("drive_path") or "").strip()
+        if not path:
+            continue
+        case["images"].append({
+            "case_id": case_id,
+            "name": row.get("file_name") or path.replace("\\\\", "/").split("/")[-1],
+            "path": path,
+            "type": category,
+            "width": row.get("width"),
+            "height": row.get("height"),
+            "drive_file_id": row.get("drive_file_id"),
+            "thumbnail_drive_file_id": row.get("thumbnail_drive_file_id"),
+            "thumbnail_drive_path": row.get("thumbnail_drive_path"),
+        })
+
+    for case in cases.values():
+        case["images"].sort(key=lambda item: str(item.get("path") or ""))
+    print(
+        f"[Supabase] Loaded {len(cases):,} cases and "
+        f"{sum(len(c['images']) for c in cases.values()):,} images"
+    )
+    return cases
+
+
+def get_production_cases():
+    """Use Supabase only when explicitly enabled; otherwise preserve CSV behaviour."""
+    if SUPABASE_READ_ENABLED:
+        try:
+            return load_supabase_cases()
+        except Exception as exc:
+            print(f"[Supabase] ERROR: {type(exc).__name__}: {exc}")
+            raise HTTPException(
+                status_code=503,
+                detail="อ่านข้อมูลจาก Supabase ไม่สำเร็จ กรุณาตรวจ Environment Variables และ Logs ของ Render",
+            ) from exc
+    return build_cases()
+
+
+# ============================================================
+# SUPABASE DIAGNOSTIC
+# ============================================================
+
+@app.get("/supabase-status")
+def supabase_status():
+    """Safe status endpoint; does not reveal credentials or database contents."""
+    configured = bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
+    if not configured:
+        return {
+            "configured": False,
+            "read_enabled": SUPABASE_READ_ENABLED,
+            "message": "ตั้งค่า SUPABASE_URL และ SUPABASE_SERVICE_ROLE_KEY ใน Render",
+        }
+    return {
+        "configured": True,
+        "read_enabled": SUPABASE_READ_ENABLED,
+        "message": "Supabase credentials are configured",
+    }
 
 
 # ============================================================
@@ -3292,7 +3446,7 @@ def delete_case(
 
     # IMPORTANT: cases from the frozen production CSV can never be deleted
     # through this endpoint. Only cases created from the web are deletable.
-    if target in build_cases():
+    if target in get_production_cases():
         raise HTTPException(
             status_code=403,
             detail="ไม่อนุญาตให้ลบเคสเดิมจาก CSV",
@@ -3389,8 +3543,8 @@ def get_cases(
 
     output = []
 
-    # Existing production cases come from the frozen CSV.
-    for case in build_cases().values():
+    # Existing production cases come from Supabase when enabled, otherwise CSV.
+    for case in get_production_cases().values():
 
         if not user_can_access_brand(user, case.get("brand")):
             continue
@@ -3434,7 +3588,7 @@ def get_cases(
             "high_after": case["high_after"],
             "image_count": len(case["images"]),
             "images": preview_images,
-            "source": "csv",
+            "source": "supabase" if SUPABASE_READ_ENABLED else "csv",
         })
 
     # Web-created cases live in Google Sheets so they survive Render restarts.
@@ -3488,7 +3642,7 @@ def get_case(
     user = current_user(authorization=authorization, token=None)
 
     case = (
-        build_cases().get(
+        get_production_cases().get(
             case_id.strip().upper()
         )
     )
