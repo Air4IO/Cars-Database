@@ -3,6 +3,7 @@ import os
 import re
 import time
 import json
+import gc
 import threading
 import hashlib
 import hmac
@@ -26,7 +27,7 @@ from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
 from fastapi import FastAPI, HTTPException, Header, Query, File, UploadFile, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, Response, HTMLResponse
+from fastapi.responses import StreamingResponse, Response, HTMLResponse, FileResponse
 from pydantic import BaseModel
 from PIL import Image, ImageOps
 
@@ -513,11 +514,25 @@ IMAGE_CACHE_DIR.mkdir(
 )
 
 # จำกัดจำนวนการ download จาก Google Drive พร้อมกัน
-# เพื่อป้องกัน SSL/connection หลุดเมื่อ browser ขอหลายรูปพร้อมกัน
-MAX_CONCURRENT_DRIVE_DOWNLOADS = 3
+# เพื่อป้องกัน SSL/connection หลุด และจำกัด peak RAM บน Render (512MB)
+MAX_CONCURRENT_DRIVE_DOWNLOADS = int(os.getenv("MAX_CONCURRENT_DRIVE_DOWNLOADS", "1"))
 DRIVE_DOWNLOAD_SEMAPHORE = threading.BoundedSemaphore(
     MAX_CONCURRENT_DRIVE_DOWNLOADS
 )
+
+# จำกัดจำนวนการ generate thumbnail พร้อมกัน
+# เพื่อป้องกัน Pillow decode ดึง RAM เกิน Render 512MB
+MAX_CONCURRENT_THUMBNAILS = int(os.getenv("MAX_CONCURRENT_THUMBNAILS", "1"))
+THUMBNAIL_SEMAPHORE = threading.BoundedSemaphore(
+    MAX_CONCURRENT_THUMBNAILS
+)
+
+# ป้องกัน request ซ้ำสำหรับไฟล์เดียวกันไม่ให้แย่งกัน download หรือ generate thumbnail พร้อมกัน
+_IN_FLIGHT_DOWNLOADS: dict[str, threading.Event] = {}
+_DOWNLOAD_LOCK = threading.Lock()
+
+_IN_FLIGHT_THUMBNAILS: dict[str, threading.Event] = {}
+_THUMBNAIL_LOCK = threading.Lock()
 
 # แยก Google Drive client ต่อ thread
 # ป้องกัน httplib2/SSL connection ถูกหลาย request ใช้พร้อมกัน
@@ -2433,11 +2448,36 @@ def _find_index_file_by_id(file_id):
 def _valid_cached_file(cache_file):
     try:
         return (
-            cache_file.exists()
+            cache_file.is_file()
             and cache_file.stat().st_size > 1000
         )
     except Exception:
         return False
+
+
+def _valid_cached_thumb(thumb_file):
+    try:
+        return (
+            thumb_file.is_file()
+            and thumb_file.stat().st_size > 100
+        )
+    except Exception:
+        return False
+
+
+def _serve_file(file_path: Path, mime_type: str):
+    if not file_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Image file not found on disk",
+        )
+    return FileResponse(
+        path=file_path,
+        media_type=mime_type,
+        headers={
+            "Cache-Control": "public, max-age=604800",
+        },
+    )
 
 
 def _download_drive_image(
@@ -2446,10 +2486,13 @@ def _download_drive_image(
     """
     Download binary จาก Google Drive โดย:
     - ไม่เรียก metadata ซ้ำ
-    - จำกัดจำนวน concurrent downloads
+    - จำกัดจำนวน concurrent downloads (default 1)
+    - ป้องกัน duplicate download สำหรับไฟล์เดียวกัน (in-flight deduplication)
+    - stream ตรงลงไฟล์ชั่วคราว ไม่สะสมใน BytesIO/RAM
     - retry เมื่อ SSL/connection หลุด
-    - validate image header
-    - save local cache
+    - validate image header และ file size ก่อน rename เข้า cache
+    - atomic file replacement
+    - ทำความสะอาดไฟล์ชั่วคราวเมื่อเกิดข้อผิดพลาด
     """
 
     file_id = file_info["id"]
@@ -2481,214 +2524,189 @@ def _download_drive_image(
     )
 
     # --------------------------------------------------------
-    # 1. Local cache
+    # 1. Local cache hit check
     # --------------------------------------------------------
-
-    if _valid_cached_file(
-        cache_file
-    ):
-
+    if _valid_cached_file(cache_file):
         size = cache_file.stat().st_size
-
         print(
-            f"[Image Cache] HIT: "
+            f"[Image Cache] HIT (original): "
             f"{file_name} "
             f"({size:,} bytes)"
         )
-
         return cache_file
 
-    # --------------------------------------------------------
-    # 2. จำกัดจำนวน request ที่เข้า Google Drive พร้อมกัน
-    # --------------------------------------------------------
-
     print(
-        f"[Drive Image] "
-        f"รอคิว download: "
+        f"[Image Cache] MISS (original): "
         f"{file_name}"
     )
 
-    with DRIVE_DOWNLOAD_SEMAPHORE:
+    # --------------------------------------------------------
+    # 2. In-flight request deduplication
+    # --------------------------------------------------------
+    wait_for_in_flight = False
+    in_flight_event = None
 
-        # ระหว่างรอคิว อาจมี request อื่นโหลดไฟล์นี้เสร็จแล้ว
-        if _valid_cached_file(
-            cache_file
-        ):
-
-            print(
-                f"[Image Cache] "
-                f"HIT หลังรอคิว: "
-                f"{file_name}"
-            )
-
+    with _DOWNLOAD_LOCK:
+        if _valid_cached_file(cache_file):
             return cache_file
+        if file_id in _IN_FLIGHT_DOWNLOADS:
+            in_flight_event = _IN_FLIGHT_DOWNLOADS[file_id]
+            wait_for_in_flight = True
+        else:
+            in_flight_event = threading.Event()
+            _IN_FLIGHT_DOWNLOADS[file_id] = in_flight_event
 
-        max_retries = 5
-        last_error = None
-
-        for attempt in range(
-            1,
-            max_retries + 1,
-        ):
-
-            try:
-
-                print(
-                    f"[Drive Image] "
-                    f"กำลัง download "
-                    f"{file_name} "
-                    f"(ครั้งที่ "
-                    f"{attempt}/{max_retries})"
-                )
-
-                drive = get_drive()
-
-                request = (
-                    drive.files()
-                    .get_media(
-                        fileId=file_id,
-                        supportsAllDrives=True,
-                    )
-                )
-
-                buffer = BytesIO()
-
-                downloader = MediaIoBaseDownload(
-                    buffer,
-                    request,
-                    chunksize=1024 * 1024,
-                )
-
-                done = False
-
-                while not done:
-
-                    status, done = (
-                        downloader.next_chunk()
-                    )
-
-                    if status:
-
-                        print(
-                            f"[Drive Image] "
-                            f"{file_name} "
-                            f"{int(status.progress() * 100)}%"
-                        )
-
-                data = buffer.getvalue()
-
-                print(
-                    f"[Drive Image] "
-                    f"download สำเร็จ "
-                    f"{file_name} "
-                    f"({len(data):,} bytes)"
-                )
-
-                # ------------------------------------------------
-                # Validate common image signatures
-                # ------------------------------------------------
-
-                valid = True
-
-                if mime_type == "image/jpeg":
-                    valid = data.startswith(
-                        b"\xff\xd8\xff"
-                    )
-
-                elif mime_type == "image/png":
-                    valid = data.startswith(
-                        b"\x89PNG\r\n\x1a\n"
-                    )
-
-                elif mime_type == "image/gif":
-                    valid = data.startswith(
-                        (b"GIF87a", b"GIF89a")
-                    )
-
-                elif mime_type == "image/webp":
-                    valid = (
-                        len(data) >= 12
-                        and data[:4] == b"RIFF"
-                        and data[8:12] == b"WEBP"
-                    )
-
-                if not valid:
-
-                    print(
-                        "[Drive Image] "
-                        "WARNING: "
-                        "ข้อมูลที่ได้ไม่ใช่ "
-                        f"{mime_type}"
-                    )
-
-                    print(
-                        "[Drive Image] "
-                        f"HEADER={data[:100]!r}"
-                    )
-
-                    raise RuntimeError(
-                        "Google Drive "
-                        "ไม่ได้ส่ง image binary กลับมา"
-                    )
-
-                # ------------------------------------------------
-                # Save atomically
-                # ------------------------------------------------
-
-                temp_file = cache_file.with_suffix(
-                    cache_file.suffix + ".tmp"
-                )
-
-                temp_file.write_bytes(
-                    data
-                )
-
-                temp_file.replace(
-                    cache_file
-                )
-
-                print(
-                    f"[Image Cache] SAVE: "
-                    f"{file_name}"
-                )
-
-                return cache_file
-
-            except Exception as e:
-
-                last_error = e
-
-                print(
-                    f"[Drive Image] "
-                    f"download error "
-                    f"(ครั้งที่ "
-                    f"{attempt}/{max_retries}): "
-                    f"{repr(e)}"
-                )
-
-                if attempt < max_retries:
-
-                    wait_seconds = (
-                        attempt * 2
-                    )
-
-                    print(
-                        f"[Drive Image] "
-                        f"รอ {wait_seconds} "
-                        f"วินาทีแล้วลองใหม่..."
-                    )
-
-                    time.sleep(
-                        wait_seconds
-                    )
-
+    if wait_for_in_flight:
+        print(
+            f"[Drive Download] In-flight wait: "
+            f"{file_name} ({file_id})"
+        )
+        in_flight_event.wait(timeout=120)
+        if _valid_cached_file(cache_file):
+            size = cache_file.stat().st_size
+            print(
+                f"[Image Cache] HIT after wait: "
+                f"{file_name} ({size:,} bytes)"
+            )
+            return cache_file
         raise HTTPException(
             status_code=502,
             detail=(
-                "Google Drive download failed: "
-                f"{repr(last_error)}"
+                "Google Drive download failed in concurrent worker for: "
+                f"{file_name}"
             ),
         )
+
+    # We are the designated downloader for this file_id
+    try:
+        print(
+            f"[Drive Download] Queued: "
+            f"{file_name}"
+        )
+
+        with DRIVE_DOWNLOAD_SEMAPHORE:
+            # Check cache again once acquired
+            if _valid_cached_file(cache_file):
+                size = cache_file.stat().st_size
+                print(
+                    f"[Image Cache] HIT หลังรอคิว: "
+                    f"{file_name} ({size:,} bytes)"
+                )
+                return cache_file
+
+            max_retries = 5
+            last_error = None
+
+            for attempt in range(1, max_retries + 1):
+                temp_file = cache_file.with_name(
+                    f"{cache_file.name}.{os.getpid()}_{threading.get_ident()}.tmp"
+                )
+                try:
+                    print(
+                        f"[Drive Download] Started: "
+                        f"{file_name} "
+                        f"(ครั้งที่ {attempt}/{max_retries})"
+                    )
+
+                    drive = get_drive()
+                    request = (
+                        drive.files()
+                        .get_media(
+                            fileId=file_id,
+                            supportsAllDrives=True,
+                        )
+                    )
+
+                    # Stream directly to disk chunks instead of BytesIO
+                    with open(temp_file, "wb+") as fd:
+                        downloader = MediaIoBaseDownload(
+                            fd,
+                            request,
+                            chunksize=1024 * 1024,
+                        )
+
+                        done = False
+                        while not done:
+                            status, done = downloader.next_chunk()
+                            if status:
+                                print(
+                                    f"[Drive Download] "
+                                    f"{file_name} "
+                                    f"{int(status.progress() * 100)}%"
+                                )
+
+                        fd.flush()
+                        fd.seek(0)
+                        header = fd.read(32)
+
+                    # ------------------------------------------------
+                    # Validate header and size without loading entire file into memory
+                    # ------------------------------------------------
+                    valid = True
+                    if mime_type == "image/jpeg":
+                        valid = header.startswith(b"\xff\xd8\xff")
+                    elif mime_type == "image/png":
+                        valid = header.startswith(b"\x89PNG\r\n\x1a\n")
+                    elif mime_type == "image/gif":
+                        valid = header.startswith((b"GIF87a", b"GIF89a"))
+                    elif mime_type == "image/webp":
+                        valid = (
+                            len(header) >= 12
+                            and header[:4] == b"RIFF"
+                            and header[8:12] == b"WEBP"
+                        )
+
+                    temp_size = temp_file.stat().st_size if temp_file.exists() else 0
+
+                    if not valid or temp_size <= 1000:
+                        print(
+                            "[Drive Download] WARNING: "
+                            f"ข้อมูลที่ได้ไม่ใช่ {mime_type} หรือขนาดผิดปกติ ({temp_size} bytes)"
+                        )
+                        raise RuntimeError(
+                            f"Google Drive download validation failed (mime={mime_type}, size={temp_size})"
+                        )
+
+                    # ------------------------------------------------
+                    # Save atomically
+                    # ------------------------------------------------
+                    temp_file.replace(cache_file)
+                    print(
+                        f"[Drive Download] Completed: "
+                        f"{file_name} ({temp_size:,} bytes)"
+                    )
+                    return cache_file
+
+                except Exception as e:
+                    last_error = e
+                    temp_file.unlink(missing_ok=True)
+                    print(
+                        f"[Drive Download] Failed: "
+                        f"{file_name} "
+                        f"(ครั้งที่ {attempt}/{max_retries}): {repr(e)}"
+                    )
+
+                    if attempt < max_retries:
+                        wait_seconds = attempt * 2
+                        print(
+                            f"[Drive Download] รอ {wait_seconds} วินาทีแล้วลองใหม่..."
+                        )
+                        time.sleep(wait_seconds)
+
+                finally:
+                    temp_file.unlink(missing_ok=True)
+
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Google Drive download failed: "
+                    f"{repr(last_error)}"
+                ),
+            )
+    finally:
+        with _DOWNLOAD_LOCK:
+            _IN_FLIGHT_DOWNLOADS.pop(file_id, None)
+        in_flight_event.set()
 
 
 def _validate_image_request_token(
@@ -2784,41 +2802,152 @@ def _serve_cached_or_downloaded_image(
     file_info,
     variant: str = "original",
 ):
-    # Keep originals in the existing Drive/cache flow. Gallery thumbnails
-    # are resized once per Render instance and cached separately.
-    cache_file = _download_drive_image(file_info)
-    output_file = cache_file
+    """
+    Serve an image either from disk cache or by downloading from Google Drive.
+    If variant == 'thumb', generates or retrieves a 480x360 JPEG thumbnail.
+    Concurrency is throttled and deduplicated to protect Render RAM.
+    """
+    file_id = file_info["id"]
+    file_name = file_info.get("name") or file_id
     mime_type = file_info.get("mimeType") or "image/jpeg"
+    cache_file = _cache_path(file_id)
 
     if variant == "thumb":
         thumb_file = cache_file.with_name(f"{cache_file.stem}_thumb.jpg")
-        if not thumb_file.exists() or thumb_file.stat().st_size == 0:
-            try:
-                with Image.open(cache_file) as source:
-                    image = ImageOps.exif_transpose(source).convert("RGB")
-                    image.thumbnail((480, 360), Image.Resampling.LANCZOS)
-                    temp_file = thumb_file.with_suffix(".jpg.tmp")
-                    image.save(temp_file, format="JPEG", quality=78, optimize=True)
-                    temp_file.replace(thumb_file)
-            except Exception as exc:
-                print(f"[Thumbnail] Could not create thumbnail for {file_info.get('name')}: {exc}")
-                # If resizing fails, return the original rather than a broken image.
-                output_file = cache_file
-            else:
-                output_file = thumb_file
-        else:
-            output_file = thumb_file
-        if output_file == thumb_file:
-            mime_type = "image/jpeg"
 
-    return StreamingResponse(
-        open(output_file, "rb"),
-        media_type=mime_type,
-        headers={
-            "Cache-Control": "public, max-age=604800",
-            "Content-Length": str(output_file.stat().st_size),
-        },
-    )
+        # 1. Fast path: Cached thumbnail already exists on disk
+        if _valid_cached_thumb(thumb_file):
+            thumb_size = thumb_file.stat().st_size
+            print(
+                f"[Image Cache] HIT (thumb): "
+                f"{file_name} ({thumb_size:,} bytes)"
+            )
+            return _serve_file(thumb_file, "image/jpeg")
+
+        print(
+            f"[Image Cache] MISS (thumb): "
+            f"{file_name}"
+        )
+
+        # 2. In-flight thumbnail deduplication (before downloading original)
+        wait_for_in_flight_thumb = False
+        thumb_event = None
+        with _THUMBNAIL_LOCK:
+            if _valid_cached_thumb(thumb_file):
+                return _serve_file(thumb_file, "image/jpeg")
+            if str(thumb_file) in _IN_FLIGHT_THUMBNAILS:
+                thumb_event = _IN_FLIGHT_THUMBNAILS[str(thumb_file)]
+                wait_for_in_flight_thumb = True
+            else:
+                thumb_event = threading.Event()
+                _IN_FLIGHT_THUMBNAILS[str(thumb_file)] = thumb_event
+
+        if wait_for_in_flight_thumb:
+            print(
+                f"[Thumbnail] In-flight wait: "
+                f"{file_name}"
+            )
+            thumb_event.wait(timeout=60)
+            if _valid_cached_thumb(thumb_file):
+                thumb_size = thumb_file.stat().st_size
+                print(
+                    f"[Thumbnail] HIT after wait: "
+                    f"{file_name} ({thumb_size:,} bytes)"
+                )
+                return _serve_file(thumb_file, "image/jpeg")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Thumbnail generation failed in concurrent worker for: {file_name}",
+            )
+
+        # 3. This worker will generate the thumbnail.
+        # First ensure original image is downloaded/cached safely.
+        try:
+            cache_file = _download_drive_image(file_info)
+
+            # 4. Acquire thumbnail semaphore to limit concurrent Pillow operations
+            print(
+                f"[Thumbnail] Queued: "
+                f"{file_name}"
+            )
+            with THUMBNAIL_SEMAPHORE:
+                if _valid_cached_thumb(thumb_file):
+                    return _serve_file(thumb_file, "image/jpeg")
+
+                print(
+                    f"[Thumbnail] Started: "
+                    f"{file_name}"
+                )
+                temp_thumb = thumb_file.with_name(
+                    f"{thumb_file.name}.{os.getpid()}_{threading.get_ident()}.tmp"
+                )
+
+                source = None
+                transposed = None
+                converted = None
+                try:
+                    source = Image.open(cache_file)
+                    try:
+                        source.draft("RGB", (960, 720))
+                    except Exception:
+                        pass
+                    transposed = ImageOps.exif_transpose(source)
+                    converted = transposed.convert("RGB")
+                    converted.thumbnail((480, 360), Image.Resampling.LANCZOS)
+                    converted.save(
+                        temp_thumb,
+                        format="JPEG",
+                        quality=78,
+                        optimize=True,
+                    )
+
+                    for obj in (converted, transposed, source):
+                        if obj is not None:
+                            try:
+                                obj.close()
+                            except Exception:
+                                pass
+                    source = transposed = converted = None
+
+                    temp_thumb.replace(thumb_file)
+                    thumb_size = thumb_file.stat().st_size
+                    print(
+                        f"[Thumbnail] Completed: "
+                        f"{file_name} ({thumb_size:,} bytes)"
+                    )
+                except Exception as exc:
+                    temp_thumb.unlink(missing_ok=True)
+                    print(
+                        f"[Thumbnail] Failed: "
+                        f"{file_name} - {repr(exc)}"
+                    )
+                    # If an already cached valid thumbnail exists, use it
+                    if _valid_cached_thumb(thumb_file):
+                        return _serve_file(thumb_file, "image/jpeg")
+                    # Do NOT silently fall back to huge original image
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Thumbnail generation failed for {file_name}: {exc}",
+                    )
+                finally:
+                    for obj in (converted, transposed, source):
+                        if obj is not None:
+                            try:
+                                obj.close()
+                            except Exception:
+                                pass
+                    temp_thumb.unlink(missing_ok=True)
+                    gc.collect()
+
+                return _serve_file(thumb_file, "image/jpeg")
+        finally:
+            with _THUMBNAIL_LOCK:
+                _IN_FLIGHT_THUMBNAILS.pop(str(thumb_file), None)
+            thumb_event.set()
+
+    # Original variant
+    cache_file = _download_drive_image(file_info)
+    return _serve_file(cache_file, mime_type)
 
 
 @app.get(
@@ -2826,6 +2955,7 @@ def _serve_cached_or_downloaded_image(
 )
 def get_image(
     file_id: str,
+    variant: str = Query(default="original", pattern="^(original|thumb)$"),
     authorization: str | None = Header(default=None),
     token: str | None = Query(default=None),
 ):
@@ -2854,7 +2984,8 @@ def get_image(
         )
 
         return _serve_cached_or_downloaded_image(
-            file_info
+            file_info,
+            variant=variant,
         )
 
     # fallback เฉพาะกรณี ID ไม่อยู่ใน index
@@ -2894,7 +3025,8 @@ def get_image(
         )
 
     return _serve_cached_or_downloaded_image(
-        file_info
+        file_info,
+        variant=variant,
     )
 
 # ============================================================

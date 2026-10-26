@@ -208,6 +208,9 @@
 
         function getThumbnailUrl(url) {
             if (!url) return url;
+            if (url.includes('variant=')) {
+                return url.replace(/variant=[^&]*/, 'variant=thumb');
+            }
             return url + (url.includes('?') ? '&' : '?') + 'variant=thumb';
         }
 
@@ -845,13 +848,21 @@
                                                     <span class="truncate max-w-[180px]">${img.name || `Image ${idx + 1}`}</span>
                                                     <span class="text-[10px] bg-slate-700 text-blue-300 px-2 py-0.5 rounded uppercase">${img.type || 'unknown'}</span>
                                                 </div>
-                                                <div class="relative h-52 bg-slate-100">
-                                                    <img 
-                                                        src="${img.url}" 
-                                                        alt="${img.name || `Image ${idx + 1}`}" 
-                                                        class="w-full h-full object-cover"
-                                                        onerror="this.src='https://placehold.co/600x400/1e293b/ffffff?text=Image+Error';"
-                                                    />
+                                                <div class="relative h-52 bg-slate-100 group">
+                                                    <a href="${img.url}" target="_blank" rel="noopener noreferrer" class="block w-full h-full cursor-pointer relative" title="คลิกเพื่อดูรูปภาพต้นฉบับขนาดเต็ม">
+                                                        <img 
+                                                            src="${getThumbnailUrl(img.url)}" 
+                                                            alt="${img.name || `Image ${idx + 1}`}" 
+                                                            loading="lazy"
+                                                            decoding="async"
+                                                            class="w-full h-full object-cover group-hover:opacity-95 transition"
+                                                            onerror="this.src='https://placehold.co/600x400/1e293b/ffffff?text=Image+Error';"
+                                                        />
+                                                        <div class="absolute bottom-2 right-2 bg-slate-900/75 hover:bg-slate-900 text-white text-[11px] px-2 py-1 rounded backdrop-blur flex items-center space-x-1 shadow transition">
+                                                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                                            <span>ดูรูปขนาดเต็ม</span>
+                                                        </div>
+                                                    </a>
                                                 </div>
                                             </div>
                                         `).join('')}
