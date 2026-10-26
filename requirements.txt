@@ -8,3 +8,4 @@ google-auth-httplib2
 google-auth-oauthlib
 python-multipart
 google-auth-oauthlib>=1.2.0
+Pillow
