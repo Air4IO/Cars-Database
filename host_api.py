@@ -28,6 +28,7 @@ from fastapi import FastAPI, HTTPException, Header, Query, File, UploadFile, For
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response, HTMLResponse
 from pydantic import BaseModel
+from PIL import Image, ImageOps
 
 
 # ============================================================
@@ -2753,6 +2754,7 @@ def head_image_by_path(
 )
 def get_image_by_path(
     path: str,
+    variant: str = Query(default="original", pattern="^(original|thumb)$"),
     authorization: str | None = Header(default=None),
     token: str | None = Query(default=None),
 ):
@@ -2773,40 +2775,48 @@ def get_image_by_path(
         )
 
     return _serve_cached_or_downloaded_image(
-        file_info
+        file_info,
+        variant=variant,
     )
 
 
 def _serve_cached_or_downloaded_image(
-    file_info
+    file_info,
+    variant: str = "original",
 ):
+    # Keep originals in the existing Drive/cache flow. Gallery thumbnails
+    # are resized once per Render instance and cached separately.
+    cache_file = _download_drive_image(file_info)
+    output_file = cache_file
+    mime_type = file_info.get("mimeType") or "image/jpeg"
 
-    cache_file = (
-        _download_drive_image(
-            file_info
-        )
-    )
-
-    mime_type = (
-        file_info.get("mimeType")
-        or "image/jpeg"
-    )
+    if variant == "thumb":
+        thumb_file = cache_file.with_name(f"{cache_file.stem}_thumb.jpg")
+        if not thumb_file.exists() or thumb_file.stat().st_size == 0:
+            try:
+                with Image.open(cache_file) as source:
+                    image = ImageOps.exif_transpose(source).convert("RGB")
+                    image.thumbnail((480, 360), Image.Resampling.LANCZOS)
+                    temp_file = thumb_file.with_suffix(".jpg.tmp")
+                    image.save(temp_file, format="JPEG", quality=78, optimize=True)
+                    temp_file.replace(thumb_file)
+            except Exception as exc:
+                print(f"[Thumbnail] Could not create thumbnail for {file_info.get('name')}: {exc}")
+                # If resizing fails, return the original rather than a broken image.
+                output_file = cache_file
+            else:
+                output_file = thumb_file
+        else:
+            output_file = thumb_file
+        if output_file == thumb_file:
+            mime_type = "image/jpeg"
 
     return StreamingResponse(
-        open(
-            cache_file,
-            "rb",
-        ),
+        open(output_file, "rb"),
         media_type=mime_type,
         headers={
-            "Cache-Control":
-                "public, "
-                "max-age=86400",
-
-            "Content-Length":
-                str(
-                    cache_file.stat().st_size
-                ),
+            "Cache-Control": "public, max-age=604800",
+            "Content-Length": str(output_file.stat().st_size),
         },
     )
 
