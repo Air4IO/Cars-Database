@@ -197,7 +197,8 @@
             currentPage: 1,
             activeModal: null, // 'detail', 'addEdit', 'shopConfig', 'confirmDelete'
             activeCaseItem: null,
-            deleteTargetId: null
+            deleteTargetId: null,
+            managedUsers: null
         };
 
         function getCaseBrand(item) { return item?.brand || item?.Brand || ''; }
@@ -205,6 +206,11 @@
         function getCaseYear(item) { return item?.year || item?.Year || ''; }
         function getCaseImages(item) { return item?.images || item?.Images || []; }
         function getCaseId(item) { return item?.case_id || item?.caseId || item?.id || item?.CaseID || ''; }
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
 
         function getThumbnailUrl(url) {
             if (!url) return url;
@@ -256,9 +262,43 @@
             }, 3000);
         }
 
-        const API_BASE = "https://cars-database-api.onrender.com";
+        const API_BASE = "https://cars-database-api.onrender.com"; // Safe fallback until the Supabase migration is deployed.
+        const SUPABASE_EDGE_BASE = "https://einnagnkeqsywgkekvnu.supabase.co/functions/v1";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Dx0wQwYJf2dKNVHUCuQXKw_OVLbjIxP";
+        const SUPABASE_EDGE_ENABLED = true;
         const ACCESS_TOKEN_KEY = 'aircare_access_token';
         const USER_KEY = 'aircare_user';
+
+        function supabaseFunctionHeaders(token = '') {
+            const headers = {
+                'apikey': SUPABASE_PUBLISHABLE_KEY,
+                'Accept': 'application/json'
+            };
+            if (token) headers['Authorization'] = 'Bearer ' + token;
+            return headers;
+        }
+
+        async function makeDriveThumbnail(file) {
+            let bitmap;
+            try {
+                bitmap = await createImageBitmap(file);
+                const scale = Math.min(480 / bitmap.width, 360 / bitmap.height, 1);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+                canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+                const context = canvas.getContext('2d');
+                if (!context) return null;
+                context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.78));
+                if (!blob) return null;
+                const baseName = file.name.replace(/\.[^.]+$/, '') || 'image';
+                return new File([blob], baseName + '_thumb.jpg', { type: 'image/jpeg' });
+            } catch (_) {
+                return null;
+            } finally {
+                bitmap?.close?.();
+            }
+        }
 
         function getAccessToken() {
             return localStorage.getItem(ACCESS_TOKEN_KEY) || '';
@@ -278,12 +318,11 @@
             renderApp();
 
             try {
-                const response = await fetch(API_BASE + '/cases', {
+                const response = await fetch((SUPABASE_EDGE_ENABLED ? SUPABASE_EDGE_BASE : API_BASE) + '/cases', {
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    }
+                    headers: SUPABASE_EDGE_ENABLED
+                        ? supabaseFunctionHeaders(token)
+                        : { 'Accept': 'application/json', 'Authorization': 'Bearer ' + token }
                 });
 
                 if (response.status === 401 || response.status === 403) {
@@ -446,6 +485,14 @@
                                 >
                                     <i class="fa-solid fa-gear mr-1.5"></i>
                                     <span class="hidden md:inline">ตั้งค่าร้าน</span>
+                                </button>
+                                <button
+                                    onclick="openUsersModal()"
+                                    class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs sm:text-sm font-medium px-3 py-2 rounded-lg flex items-center border border-slate-700 transition"
+                                    title="จัดการบัญชีผู้ใช้"
+                                >
+                                    <i class="fa-solid fa-users mr-1.5"></i>
+                                    <span class="hidden md:inline">ผู้ใช้</span>
                                 </button>
                             ` : ''}
 
@@ -800,6 +847,94 @@
 
         function renderModalsHTML() {
             if (!state.activeModal) return '';
+
+            if (state.activeModal === 'users') {
+                const users = state.managedUsers || [];
+                return `
+                    <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+                        <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[92vh] shadow-2xl overflow-hidden flex flex-col">
+                            <div class="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-base font-bold">จัดการบัญชีผู้ใช้</h3>
+                                    <p class="text-xs text-slate-400 mt-1">ตั้งชื่อผู้ใช้ รหัสผ่าน และยี่ห้อรถที่ดูได้</p>
+                                </div>
+                                <button onclick="closeModal()" class="text-slate-400 hover:text-white" aria-label="ปิด">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div class="p-5 overflow-y-auto space-y-6">
+                                <form onsubmit="handleCreateAdminUser(event)" class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                                    <h4 class="font-semibold text-sm">เพิ่มผู้ใช้ใหม่</h4>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                        <input name="username" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_-]{3,32}" placeholder="ชื่อผู้ใช้" class="px-3 py-2 border rounded-lg text-sm" />
+                                        <input name="password" type="password" required minlength="8" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)" class="px-3 py-2 border rounded-lg text-sm" />
+                                        <select name="role" class="px-3 py-2 border rounded-lg text-sm">
+                                            <option value="user">ผู้ใช้ทั่วไป</option>
+                                            <option value="admin">ผู้ดูแลระบบ</option>
+                                        </select>
+                                        <input name="allowed_brands" placeholder="ยี่ห้อ เช่น Toyota,Honda หรือ ALL" class="px-3 py-2 border rounded-lg text-sm" />
+                                    </div>
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <label class="text-xs text-slate-600 flex items-center gap-2">
+                                            <input name="active" type="checkbox" class="rounded" /> เปิดให้เข้าใช้งานทันที
+                                        </label>
+                                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium">
+                                            เพิ่มบัญชี
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="font-semibold text-sm">บัญชีทั้งหมด (${users.length})</h4>
+                                        <button onclick="refreshAdminUsers()" class="text-xs text-blue-700 hover:text-blue-900"><i class="fa-solid fa-rotate mr-1"></i>โหลดใหม่</button>
+                                    </div>
+                                    ${state.managedUsers === null ? `
+                                        <div class="text-sm text-slate-500 py-8 text-center">กำลังโหลดรายชื่อ...</div>
+                                    ` : users.length === 0 ? `
+                                        <div class="text-sm text-slate-500 py-8 text-center border border-dashed rounded-xl">ยังไม่มีบัญชีผู้ใช้</div>
+                                    ` : `
+                                        <div class="space-y-3">
+                                            ${users.map(user => {
+                                                const brands = Array.isArray(user.allowed_brands) ? user.allowed_brands.join(', ') : (user.allowed_brands || '');
+                                                return `
+                                                    <form onsubmit="handleSaveAdminUser(event, '${escapeHtml(user.username)}')" class="border border-slate-200 rounded-xl p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+                                                        <div class="lg:col-span-1">
+                                                            <label class="block text-[11px] text-slate-500 mb-1">ชื่อผู้ใช้</label>
+                                                            <div class="font-medium text-sm px-1 py-2">${escapeHtml(user.username)}</div>
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[11px] text-slate-500 mb-1">สิทธิ์</label>
+                                                            <select name="role" class="w-full px-2 py-2 border rounded-lg text-xs">
+                                                                <option value="user" ${user.role === 'user' ? 'selected' : ''}>ผู้ใช้</option>
+                                                                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>แอดมิน</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="lg:col-span-2">
+                                                            <label class="block text-[11px] text-slate-500 mb-1">ยี่ห้อรถ (คั่นด้วย ,)</label>
+                                                            <input name="allowed_brands" value="${escapeHtml(brands)}" placeholder="ALL หรือ Toyota,Honda" class="w-full px-2 py-2 border rounded-lg text-xs" />
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[11px] text-slate-500 mb-1">ตั้งรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)</label>
+                                                            <input name="password" type="password" minlength="8" class="w-full px-2 py-2 border rounded-lg text-xs" />
+                                                        </div>
+                                                        <div class="flex items-center justify-between gap-2">
+                                                            <label class="text-[11px] text-slate-600 flex items-center gap-1.5">
+                                                                <input name="active" type="checkbox" ${user.active ? 'checked' : ''} class="rounded" /> เปิด
+                                                            </label>
+                                                            <button type="submit" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs">บันทึก</button>
+                                                        </div>
+                                                    </form>
+                                                `;
+                                            }).join('')}
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
 
             if (state.activeModal === 'detail' && state.activeCaseItem) {
                 const item = state.activeCaseItem;
@@ -1232,12 +1367,11 @@
             }
 
             try {
-                const response = await fetch(API_BASE + '/login', {
+                const response = await fetch((SUPABASE_EDGE_ENABLED ? SUPABASE_EDGE_BASE : API_BASE) + '/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
+                    headers: SUPABASE_EDGE_ENABLED
+                        ? { ...supabaseFunctionHeaders(), 'Content-Type': 'application/json' }
+                        : { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({
                         username: username,
                         password: password
@@ -1288,6 +1422,93 @@
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 }
+            }
+        }
+
+        async function openUsersModal() {
+            state.activeModal = 'users';
+            state.managedUsers = null;
+            renderApp();
+            await refreshAdminUsers();
+        }
+
+        async function refreshAdminUsers() {
+            const token = getAccessToken();
+            if (!token) return;
+            try {
+                const response = await fetch(SUPABASE_EDGE_ENABLED ? SUPABASE_EDGE_BASE + '/admin-users' : API_BASE + '/admin/users', {
+                    headers: SUPABASE_EDGE_ENABLED
+                        ? supabaseFunctionHeaders(token)
+                        : { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.detail || 'โหลดรายชื่อผู้ใช้ไม่สำเร็จ');
+                state.managedUsers = Array.isArray(data) ? data : [];
+                renderApp();
+            } catch (err) {
+                state.managedUsers = [];
+                renderApp();
+                showToast(err.message || 'โหลดรายชื่อผู้ใช้ไม่สำเร็จ', 'error');
+            }
+        }
+
+        async function handleCreateAdminUser(e) {
+            e.preventDefault();
+            const form = e.target;
+            const values = new FormData(form);
+            const brandsText = String(values.get('allowed_brands') || '').trim();
+            const payload = {
+                username: String(values.get('username') || '').trim().toLowerCase(),
+                password: String(values.get('password') || ''),
+                role: String(values.get('role') || 'user'),
+                allowed_brands: brandsText ? brandsText.split(',').map(item => item.trim()).filter(Boolean) : [],
+                active: form.elements.active.checked
+            };
+            try {
+                const response = await fetch(SUPABASE_EDGE_ENABLED ? SUPABASE_EDGE_BASE + '/admin-users' : API_BASE + '/admin/users', {
+                    method: 'POST',
+                    headers: SUPABASE_EDGE_ENABLED
+                        ? { ...supabaseFunctionHeaders(getAccessToken()), 'Content-Type': 'application/json' }
+                        : { 'Authorization': 'Bearer ' + getAccessToken(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.detail || 'เพิ่มบัญชีไม่สำเร็จ');
+                showToast('เพิ่มบัญชีผู้ใช้เรียบร้อย');
+                await refreshAdminUsers();
+            } catch (err) {
+                showToast(err.message || 'เพิ่มบัญชีไม่สำเร็จ', 'error');
+            }
+        }
+
+        async function handleSaveAdminUser(e, username) {
+            e.preventDefault();
+            const form = e.target;
+            const values = new FormData(form);
+            const brandsText = String(values.get('allowed_brands') || '').trim();
+            const payload = {
+                role: String(values.get('role') || 'user'),
+                allowed_brands: brandsText ? brandsText.split(',').map(item => item.trim()).filter(Boolean) : [],
+                active: form.elements.active.checked
+            };
+            const password = String(values.get('password') || '');
+            if (password) payload.password = password;
+            try {
+                const response = await fetch(SUPABASE_EDGE_ENABLED
+                    ? SUPABASE_EDGE_BASE + '/admin-users/' + encodeURIComponent(username)
+                    : API_BASE + '/admin/users/' + encodeURIComponent(username), {
+                    method: 'PATCH',
+                    headers: SUPABASE_EDGE_ENABLED
+                        ? { ...supabaseFunctionHeaders(getAccessToken()), 'Content-Type': 'application/json' }
+                        : { 'Authorization': 'Bearer ' + getAccessToken(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.detail || 'บันทึกบัญชีไม่สำเร็จ');
+                showToast('บันทึกบัญชีผู้ใช้เรียบร้อย');
+                await refreshAdminUsers();
+            } catch (err) {
+                showToast(err.message || 'บันทึกบัญชีไม่สำเร็จ', 'error');
             }
         }
 
@@ -1421,11 +1642,13 @@
             });
 
             try {
-                const response = await fetch(API_BASE + '/cases/' + encodeURIComponent(caseId), {
+                const response = await fetch(SUPABASE_EDGE_ENABLED
+                    ? SUPABASE_EDGE_BASE + '/cases/' + encodeURIComponent(caseId)
+                    : API_BASE + '/cases/' + encodeURIComponent(caseId), {
                     method: 'DELETE',
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
+                    headers: SUPABASE_EDGE_ENABLED
+                        ? supabaseFunctionHeaders(token)
+                        : { 'Authorization': 'Bearer ' + token }
                 });
 
                 let result = null;
@@ -1541,20 +1764,18 @@
                 return;
             }
 
-            const payload = new FormData();
-            payload.append('case_id', newCaseId);
-            payload.append('customer', String(formData.get('customer') || ''));
-            payload.append('brand', String(formData.get('brand') || ''));
-            payload.append('model', String(formData.get('model') || ''));
-            payload.append('year', String(formData.get('year') || ''));
-            payload.append('mileage', String(formData.get('mileage') || ''));
-            payload.append('low_before', String(formData.get('lowBefore') || ''));
-            payload.append('low_after', String(formData.get('lowAfter') || ''));
-            payload.append('high_before', String(formData.get('highBefore') || ''));
-            payload.append('high_after', String(formData.get('highAfter') || ''));
-
-            coilFiles.forEach(file => payload.append('coil_images', file, file.name));
-            dirtyWaterFiles.forEach(file => payload.append('dirty_water_images', file, file.name));
+            const casePayload = {
+                case_id: newCaseId,
+                customer: String(formData.get('customer') || ''),
+                brand: String(formData.get('brand') || ''),
+                model: String(formData.get('model') || ''),
+                year: String(formData.get('year') || ''),
+                mileage: String(formData.get('mileage') || ''),
+                low_before: String(formData.get('lowBefore') || ''),
+                low_after: String(formData.get('lowAfter') || ''),
+                high_before: String(formData.get('highBefore') || ''),
+                high_after: String(formData.get('highAfter') || '')
+            };
 
             const submitButton = form.querySelector('button[type="submit"]');
             const originalButtonText = submitButton?.textContent || 'บันทึกเคสใหม่';
@@ -1566,13 +1787,96 @@
             }
 
             try {
-                const response = await fetch(API_BASE + '/cases', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: payload
-                });
+                let response;
+                if (SUPABASE_EDGE_ENABLED) {
+                    const uploads = [];
+                    const caseImages = [];
+                    const files = [
+                        ...coilFiles.map(file => ({ file, category: 'coil' })),
+                        ...dirtyWaterFiles.map(file => ({ file, category: 'dirty water' }))
+                    ];
+                    const folderYear = casePayload.year || String(new Date().getFullYear());
+                    let caseSaved = false;
+                    try {
+                        const uploadDriveFile = async (file, item, index, variant = 'original') => {
+                            const params = new URLSearchParams({
+                                case_id: newCaseId,
+                                year: folderYear,
+                                category: item.category,
+                                name: file.name,
+                                image_order: String(index + 1),
+                                variant
+                            });
+                            const uploadResponse = await fetch(SUPABASE_EDGE_BASE + '/drive-upload?' + params.toString(), {
+                                method: 'POST',
+                                headers: {
+                                    ...supabaseFunctionHeaders(token),
+                                    'Content-Type': file.type || 'application/octet-stream'
+                                },
+                                body: file
+                            });
+                            const uploadResult = await uploadResponse.json().catch(() => ({}));
+                            if (!uploadResponse.ok) throw new Error(uploadResult.detail || 'อัปโหลดรูปไป Google Drive ไม่สำเร็จ');
+                            uploads.push(uploadResult);
+                            return uploadResult;
+                        };
+
+                        for (let index = 0; index < files.length; index++) {
+                            const item = files[index];
+                            if (submitButton) submitButton.textContent = `กำลังอัปโหลดรูป ${index + 1}/${files.length}...`;
+                            const original = await uploadDriveFile(item.file, item, index);
+                            const thumbnail = await makeDriveThumbnail(item.file);
+                            if (thumbnail) {
+                                if (submitButton) submitButton.textContent = `กำลังสร้างรูปตัวอย่าง ${index + 1}/${files.length}...`;
+                                const thumbResult = await uploadDriveFile(thumbnail, item, index, 'thumb');
+                                original.thumbnail_drive_file_id = thumbResult.id;
+                                original.thumbnail_drive_path = thumbResult.drive_path;
+                            }
+                            caseImages.push(original);
+                        }
+
+                        if (submitButton) submitButton.textContent = 'กำลังบันทึกข้อมูลเคส...';
+                        response = await fetch(SUPABASE_EDGE_BASE + '/cases', {
+                            method: 'POST',
+                            headers: { ...supabaseFunctionHeaders(token), 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...casePayload, images: caseImages })
+                        });
+                        const saveResult = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(saveResult.detail || 'บันทึกข้อมูลเคสไม่สำเร็จ');
+                        caseSaved = true;
+                        response = new Response(JSON.stringify(saveResult), { status: 201, headers: { 'Content-Type': 'application/json' } });
+                    } catch (edgeError) {
+                        if (!caseSaved && uploads.length) {
+                            await Promise.allSettled(uploads.map(image => {
+                                const cleanupParams = new URLSearchParams({ file_id: image.id });
+                                return fetch(SUPABASE_EDGE_BASE + '/drive-upload?' + cleanupParams.toString(), {
+                                    method: 'DELETE',
+                                    headers: supabaseFunctionHeaders(token)
+                                });
+                            }));
+                        }
+                        throw edgeError;
+                    }
+                } else {
+                    const payload = new FormData();
+                    payload.append('case_id', newCaseId);
+                    payload.append('customer', casePayload.customer);
+                    payload.append('brand', casePayload.brand);
+                    payload.append('model', casePayload.model);
+                    payload.append('year', casePayload.year);
+                    payload.append('mileage', casePayload.mileage);
+                    payload.append('low_before', casePayload.low_before);
+                    payload.append('low_after', casePayload.low_after);
+                    payload.append('high_before', casePayload.high_before);
+                    payload.append('high_after', casePayload.high_after);
+                    coilFiles.forEach(file => payload.append('coil_images', file, file.name));
+                    dirtyWaterFiles.forEach(file => payload.append('dirty_water_images', file, file.name));
+                    response = await fetch(API_BASE + '/cases', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        body: payload
+                    });
+                }
 
                 let result = null;
                 try {
@@ -1639,12 +1943,11 @@
             }
 
             try {
-                const response = await fetch(API_BASE + '/me', {
+                const response = await fetch((SUPABASE_EDGE_ENABLED ? SUPABASE_EDGE_BASE : API_BASE) + '/me', {
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    }
+                    headers: SUPABASE_EDGE_ENABLED
+                        ? supabaseFunctionHeaders(token)
+                        : { 'Accept': 'application/json', 'Authorization': 'Bearer ' + token }
                 });
 
                 if (!response.ok) {
