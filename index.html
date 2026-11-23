@@ -194,6 +194,8 @@
             selectedBrand: '',
             selectedModel: '',
             selectedYear: '',
+            selectedMileageMin: '',
+            selectedMileageMax: '',
             currentPage: 1,
             activeModal: null, // 'detail', 'addEdit', 'shopConfig', 'confirmDelete'
             activeCaseItem: null,
@@ -361,6 +363,8 @@
                 const brand = getCaseBrand(item);
                 const model = getCaseModel(item);
                 const year = getCaseYear(item);
+                const mileageText = String(item?.mileage ?? '').replace(/[^\d.-]/g, '');
+                const mileage = mileageText ? Number(mileageText) : Number.NaN;
 
                 const matchesSearch = 
                     brand.toLowerCase().includes(state.searchKeyword.toLowerCase()) ||
@@ -370,8 +374,11 @@
                 const matchesBrand = !state.selectedBrand || brand === state.selectedBrand;
                 const matchesModel = !state.selectedModel || model === state.selectedModel;
                 const matchesYear = !state.selectedYear || year.toString() === state.selectedYear.toString();
+                const hasMileage = Number.isFinite(mileage);
+                const matchesMileageMin = !state.selectedMileageMin || (hasMileage && mileage >= Number(state.selectedMileageMin));
+                const matchesMileageMax = !state.selectedMileageMax || (hasMileage && mileage <= Number(state.selectedMileageMax));
 
-                return matchesSearch && matchesBrand && matchesModel && matchesYear;
+                return matchesSearch && matchesBrand && matchesModel && matchesYear && matchesMileageMin && matchesMileageMax;
             });
         }
 
@@ -547,7 +554,7 @@
             const models = [...new Set(filteredByBrand.map(c => getCaseModel(c)))].filter(Boolean).sort();
             const years = [...new Set(state.cases.map(c => getCaseYear(c)))].filter(Boolean).sort((a,b) => b-a);
 
-            const hasActiveFilters = state.searchKeyword || state.selectedBrand || state.selectedModel || state.selectedYear;
+            const hasActiveFilters = state.searchKeyword || state.selectedBrand || state.selectedModel || state.selectedYear || state.selectedMileageMin || state.selectedMileageMax;
 
             return `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-8">
@@ -567,7 +574,7 @@
                         ` : ''}
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">ค้นหาคำขวัญ / ยี่ห้อ / รุ่น</label>
                             <div class="relative">
@@ -613,6 +620,34 @@
                                 <option value="">-- ทั้งหมดทุกปี --</option>
                                 ${years.map(y => `<option value="${y}" ${state.selectedYear === y.toString() ? 'selected' : ''}>${y}</option>`).join('')}
                             </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1" for="mileage-min-filter">เลขไมล์ตั้งแต่ (กม.)</label>
+                            <input
+                                id="mileage-min-filter"
+                                type="number"
+                                min="0"
+                                step="1000"
+                                value="${state.selectedMileageMin}"
+                                onchange="handleMileageRangeChange('min', this.value)"
+                                placeholder="เช่น 70000"
+                                class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1" for="mileage-max-filter">เลขไมล์ไม่เกิน (กม.)</label>
+                            <input
+                                id="mileage-max-filter"
+                                type="number"
+                                min="0"
+                                step="1000"
+                                value="${state.selectedMileageMax}"
+                                onchange="handleMileageRangeChange('max', this.value)"
+                                placeholder="เช่น 100000"
+                                class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                            />
                         </div>
                     </div>
                 </div>
@@ -1523,6 +1558,8 @@
             state.selectedBrand = '';
             state.selectedModel = '';
             state.selectedYear = '';
+            state.selectedMileageMin = '';
+            state.selectedMileageMax = '';
             state.searchKeyword = '';
 
             renderApp();
@@ -1569,11 +1606,20 @@
             renderApp();
         }
 
+        function handleMileageRangeChange(bound, val) {
+            if (bound === 'min') state.selectedMileageMin = val;
+            if (bound === 'max') state.selectedMileageMax = val;
+            state.currentPage = 1;
+            renderApp();
+        }
+
         function handleResetFilters() {
             state.searchKeyword = '';
             state.selectedBrand = '';
             state.selectedModel = '';
             state.selectedYear = '';
+            state.selectedMileageMin = '';
+            state.selectedMileageMax = '';
             state.currentPage = 1;
             renderApp();
         }
@@ -1977,3 +2023,4 @@
     </script>
 </body>
 </html>
+
