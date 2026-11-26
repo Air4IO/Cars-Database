@@ -1,0 +1,5 @@
+project_id = "einnagnkeqsywgkekvnu"
+
+# QR credentials are validated by the function itself; they are not Supabase Auth JWTs.
+[functions.qr-login]
+verify_jwt = false
