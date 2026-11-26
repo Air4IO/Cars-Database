@@ -30,6 +30,8 @@
 
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QR generation stays in the browser; the QR token is never sent to a third-party QR service. -->
+    <script src="./qrcode.min.js"></script>
 
     <style>
         body {
@@ -200,7 +202,8 @@
             activeModal: null, // 'detail', 'addEdit', 'shopConfig', 'confirmDelete'
             activeCaseItem: null,
             deleteTargetId: null,
-            managedUsers: null
+            managedUsers: null,
+            qrLogin: null
         };
 
         function getCaseBrand(item) { return item?.brand || item?.Brand || ''; }
@@ -898,6 +901,19 @@
                                 </button>
                             </div>
                             <div class="p-5 overflow-y-auto space-y-6">
+                                ${state.qrLogin ? `
+                                    <div class="border border-blue-200 bg-blue-50 rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center">
+                                        <div id="user-qr-code" class="bg-white p-2 rounded-lg min-w-[220px] min-h-[220px] flex items-center justify-center"></div>
+                                        <div class="text-center sm:text-left">
+                                            <h4 class="font-semibold">QR สำหรับบัญชี ${escapeHtml(state.qrLogin.username)}</h4>
+                                            <p class="text-xs text-slate-600 mt-1 max-w-md">ผู้สแกนจะเข้าใช้บัญชีนี้ได้ โดยเห็นเฉพาะยี่ห้อรถที่กำหนดไว้ QR นี้ใช้ได้จนกว่าแอดมินจะปิดหรือออก QR ใหม่</p>
+                                            <div class="flex flex-wrap gap-2 mt-3 justify-center sm:justify-start">
+                                                <button type="button" onclick="downloadUserQr()" class="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium">ดาวน์โหลด QR</button>
+                                                <button type="button" onclick="closeUserQr()" class="px-3 py-2 bg-white border rounded-lg text-xs font-medium">ปิด</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : ''}
                                 <form onsubmit="handleCreateAdminUser(event)" class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                                     <h4 class="font-semibold text-sm">เพิ่มผู้ใช้ใหม่</h4>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -933,7 +949,7 @@
                                             ${users.map(user => {
                                                 const brands = Array.isArray(user.allowed_brands) ? user.allowed_brands.join(', ') : (user.allowed_brands || '');
                                                 return `
-                                                    <form onsubmit="handleSaveAdminUser(event, '${escapeHtml(user.username)}')" class="border border-slate-200 rounded-xl p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+                                                    <form onsubmit="handleSaveAdminUser(event, '${escapeHtml(user.username)}')" class="border border-slate-200 rounded-xl p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-3 items-end">
                                                         <div class="lg:col-span-1">
                                                             <label class="block text-[11px] text-slate-500 mb-1">ชื่อผู้ใช้</label>
                                                             <div class="font-medium text-sm px-1 py-2">${escapeHtml(user.username)}</div>
@@ -958,6 +974,15 @@
                                                                 <input name="active" type="checkbox" ${user.active ? 'checked' : ''} class="rounded" /> เปิด
                                                             </label>
                                                             <button type="submit" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs">บันทึก</button>
+                                                        </div>
+                                                        <div class="lg:col-span-2 flex flex-wrap items-center justify-between gap-2">
+                                                            <span class="text-[11px] text-slate-500">${user.qr_active ? 'มี QR ที่ใช้ได้' : 'ยังไม่มี QR'}</span>
+                                                            <div class="flex gap-2">
+                                                                ${user.role === 'user' ? `
+                                                                    <button type="button" onclick="handleGenerateUserQr('${escapeHtml(user.username)}')" ${user.active ? '' : 'disabled'} class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg text-xs">${user.qr_active ? 'ออก QR ใหม่' : 'สร้าง QR'}</button>
+                                                                    ${user.qr_active ? `<button type="button" onclick="handleRevokeUserQr('${escapeHtml(user.username)}')" class="px-3 py-2 bg-white border border-red-200 text-red-700 hover:bg-red-50 rounded-lg text-xs">ปิด QR</button>` : ''}
+                                                                ` : '<span class="text-[11px] text-slate-400">QR ใช้ได้กับผู้ใช้ทั่วไป</span>'}
+                                                            </div>
                                                         </div>
                                                     </form>
                                                 `;
@@ -1370,6 +1395,7 @@
             `;
 
             document.getElementById('modal-root').innerHTML = renderModalsHTML();
+            if (state.activeModal === 'users' && state.qrLogin) requestAnimationFrame(drawUserQr);
         }
 
         async function handleLogin(userObj) {
@@ -1484,6 +1510,112 @@
                 state.managedUsers = [];
                 renderApp();
                 showToast(err.message || 'โหลดรายชื่อผู้ใช้ไม่สำเร็จ', 'error');
+            }
+        }
+
+        function drawUserQr() {
+            if (!state.qrLogin) return;
+            const container = document.getElementById('user-qr-code');
+            if (!container) return;
+            if (typeof QRCode === 'undefined') {
+                container.textContent = 'สร้าง QR ไม่สำเร็จ กรุณาโหลดหน้าเว็บใหม่';
+                return;
+            }
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: state.qrLogin.url,
+                width: 200,
+                height: 200,
+                colorDark: '#0f172a',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function closeUserQr() {
+            state.qrLogin = null;
+            renderApp();
+        }
+
+        function downloadUserQr() {
+            const container = document.getElementById('user-qr-code');
+            const canvas = container?.querySelector('canvas');
+            const image = container?.querySelector('img');
+            const dataUrl = canvas?.toDataURL('image/png') || image?.src;
+            if (!dataUrl || !state.qrLogin) {
+                showToast('ยังไม่มี QR ให้ดาวน์โหลด', 'error');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `AIR4-QR-${state.qrLogin.username}.png`;
+            link.click();
+        }
+
+        async function handleGenerateUserQr(username) {
+            const user = (state.managedUsers || []).find(item => item.username === username);
+            if (!user || !user.active || user.role !== 'user') {
+                showToast('QR ใช้ได้กับบัญชีผู้ใช้ทั่วไปที่เปิดใช้งานอยู่เท่านั้น', 'error');
+                return;
+            }
+            if (user.qr_active && !window.confirm(`ออก QR ใหม่ให้ ${username}? QR เดิมจะใช้ไม่ได้`)) return;
+            try {
+                const response = await fetch(SUPABASE_EDGE_BASE + '/admin-users/' + encodeURIComponent(username) + '/qr', {
+                    method: 'POST',
+                    headers: { ...supabaseFunctionHeaders(getAccessToken()), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.detail || 'สร้าง QR ไม่สำเร็จ');
+                const loginUrl = new URL(window.location.href);
+                loginUrl.hash = 'qr=' + encodeURIComponent(result.qr_token);
+                state.qrLogin = { username: result.username, url: loginUrl.toString() };
+                await refreshAdminUsers();
+                requestAnimationFrame(drawUserQr);
+                showToast('สร้าง QR เรียบร้อย ดาวน์โหลดแล้วส่งให้ผู้ใช้ได้');
+            } catch (err) {
+                showToast(err.message || 'สร้าง QR ไม่สำเร็จ', 'error');
+            }
+        }
+
+        async function handleRevokeUserQr(username) {
+            if (!window.confirm(`ปิด QR ของ ${username}? ผู้ที่มี QR จะเข้าสู่ระบบด้วย QR นี้ครั้งต่อไปไม่ได้`)) return;
+            try {
+                const response = await fetch(SUPABASE_EDGE_BASE + '/admin-users/' + encodeURIComponent(username) + '/qr', {
+                    method: 'DELETE',
+                    headers: supabaseFunctionHeaders(getAccessToken())
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.detail || 'ปิด QR ไม่สำเร็จ');
+                if (state.qrLogin?.username === username) state.qrLogin = null;
+                await refreshAdminUsers();
+                showToast('ปิด QR เรียบร้อย');
+            } catch (err) {
+                showToast(err.message || 'ปิด QR ไม่สำเร็จ', 'error');
+            }
+        }
+
+        async function handleQrAutoLogin(token) {
+            try {
+                const response = await fetch(SUPABASE_EDGE_BASE + '/qr-login', {
+                    method: 'POST',
+                    headers: { ...supabaseFunctionHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.detail || 'QR นี้ใช้เข้าสู่ระบบไม่ได้');
+                localStorage.setItem(ACCESS_TOKEN_KEY, result.access_token);
+                localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+                state.currentUser = { ...result.user, name: result.user.username };
+                state.currentPage = 1;
+                await fetchCasesData();
+                showToast('เข้าสู่ระบบเรียบร้อย');
+            } catch (err) {
+                state.currentUser = null;
+                state.cases = [];
+                state.loading = false;
+                renderApp();
+                showToast(err.message || 'เข้าสู่ระบบด้วย QR ไม่สำเร็จ', 'error');
             }
         }
 
@@ -1980,6 +2112,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            const qrToken = new URLSearchParams(window.location.hash.slice(1)).get('qr');
+            if (qrToken) {
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                await handleQrAutoLogin(qrToken);
+                return;
+            }
+
             const token = getAccessToken();
 
             if (!token) {
