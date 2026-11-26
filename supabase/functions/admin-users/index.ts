@@ -63,6 +63,39 @@ Deno.serve(async (req: Request) => {
       })));
     }
 
+    if ((req.method === "POST" || req.method === "DELETE") && path.length >= 3 && path[path.length - 1] === "qr") {
+      const username = decodeURIComponent(path[path.length - 2]).toLowerCase();
+      const { data: user, error } = await db.from("app_users")
+        .select("id,username,role,active")
+        .eq("username", username)
+        .maybeSingle();
+      if (error) throw error;
+      if (!user) return jsonResponse({ detail: "ไม่พบบัญชีผู้ใช้นี้" }, 404);
+
+      if (req.method === "DELETE") {
+        const { error: revokeError } = await db.from("app_user_qr_access")
+          .update({ revoked_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+          .is("revoked_at", null);
+        if (revokeError) throw revokeError;
+        return jsonResponse({ detail: "ปิด QR สำหรับบัญชีนี้แล้ว" });
+      }
+
+      if (!user.active) return jsonResponse({ detail: "เปิดบัญชีผู้ใช้นี้ก่อนสร้าง QR" }, 400);
+      if (user.role !== "user") return jsonResponse({ detail: "สร้าง QR ได้เฉพาะบัญชีผู้ใช้ทั่วไป" }, 400);
+
+      const token = randomToken();
+      const { error: saveError } = await db.from("app_user_qr_access").upsert({
+        user_id: user.id,
+        token_hash: await tokenHash(token),
+        created_at: new Date().toISOString(),
+        last_used_at: null,
+        revoked_at: null,
+      }, { onConflict: "user_id" });
+      if (saveError) throw saveError;
+      return jsonResponse({ username: user.username, qr_token: token });
+    }
+
     if (req.method === "POST") {
       const body = await req.json();
       const username = String(body.username || "").trim().toLowerCase();
@@ -123,39 +156,6 @@ Deno.serve(async (req: Request) => {
         .select("username,role,allowed_brands,active,created_at,last_login").single();
       if (error) throw error;
       return jsonResponse(publicRecord(data));
-    }
-
-    if ((req.method === "POST" || req.method === "DELETE") && path.length >= 3 && path[path.length - 1] === "qr") {
-      const username = decodeURIComponent(path[path.length - 2]).toLowerCase();
-      const { data: user, error } = await db.from("app_users")
-        .select("id,username,role,active")
-        .eq("username", username)
-        .maybeSingle();
-      if (error) throw error;
-      if (!user) return jsonResponse({ detail: "ไม่พบบัญชีผู้ใช้นี้" }, 404);
-
-      if (req.method === "DELETE") {
-        const { error: revokeError } = await db.from("app_user_qr_access")
-          .update({ revoked_at: new Date().toISOString() })
-          .eq("user_id", user.id)
-          .is("revoked_at", null);
-        if (revokeError) throw revokeError;
-        return jsonResponse({ detail: "ปิด QR สำหรับบัญชีนี้แล้ว" });
-      }
-
-      if (!user.active) return jsonResponse({ detail: "เปิดบัญชีผู้ใช้นี้ก่อนสร้าง QR" }, 400);
-      if (user.role !== "user") return jsonResponse({ detail: "สร้าง QR ได้เฉพาะบัญชีผู้ใช้ทั่วไป" }, 400);
-
-      const token = randomToken();
-      const { error: saveError } = await db.from("app_user_qr_access").upsert({
-        user_id: user.id,
-        token_hash: await tokenHash(token),
-        created_at: new Date().toISOString(),
-        last_used_at: null,
-        revoked_at: null,
-      }, { onConflict: "user_id" });
-      if (saveError) throw saveError;
-      return jsonResponse({ username: user.username, qr_token: token });
     }
 
     return jsonResponse({ detail: "ไม่พบคำขอนี้" }, 404);
